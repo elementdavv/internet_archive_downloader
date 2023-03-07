@@ -1,0 +1,30 @@
+{
+    "manifest_version": 3
+    , "author": "Element Davv <lakedai@hotmail.com>"
+    , "description": "Download books from Internet Archive"
+    , "homepage_url": "https://github.com/elementdavv/internet_archive_downloader"
+    , "name": "Internet archive downloader"
+    , "version": "0.1.0"
+    , "icons": {
+        "128": "images/128.png"
+    }
+    , "background": {
+        "service_worker": "js/bg.js"
+        , "type": "module"
+    }
+    , "action": {
+        "default_icon": {
+            "128": "images/128.png"
+        }
+        , "default_popup": "pages/popup.html"
+        , "default_title": "Download the book"
+    }
+    , "permissions": [
+        "tabs"
+        , "downloads"
+        , "scripting"
+    ]
+    , "host_permissions": [
+        "https://archive.org/"
+    ]
+}
