@@ -1,0 +1,10 @@
+{
+    "description": { "message": "Download PDF books from archive.org" }
+    , "title": { "message": "archive.org PDF Books Downloader" }
+    , "pagenotfounderror": { "message": "Error: Book info not found. Refresh and try again." }
+    , "alerterror": { "message": "$1.\nPlease contact the developer." }
+    , "download": { "message": "Download" }
+    , "downloading": { "message": "Downloading" }
+    , "complete": { "message": "Completed" }
+    , "fail": { "message": "Failed" }
+}

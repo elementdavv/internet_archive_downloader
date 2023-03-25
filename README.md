@@ -1,15 +1,29 @@
 # Internet Archive downloader
-Internet Archive provides free public access to collections of digitalized materials. Books are for download, borrow or lend. Borrowed books can only be read online within limited time. This chrome extension let you get the book by downloading each page one by one. After that you can use other tool to combine them to one whole book. For example, a tool named "convert" from imagemagic on linux.
 
-## Dependency
-Another chrome extension of CORS is required. On my test, "Allow CORS: Access-Control-Allow-Origin" works well. It can be installed from https://microsoftedge.microsoft.com/addons/detail/allow-cors-accesscontro/bhjepjpgngghppolkjdhckmnfphffdag
+Books on Internet Archive(archive.org) are available for download, borrow or lend. Books borrowed can only be read online. This extension let you download a book for offline read after borrowing it.
 
-## Installation
-Git clone this repository, then from Extension Manager window in the browser, click "Load unpacked" button and navigate to the repository folder.
+## Install
+Download the release zip file, unzip to a directory. Then from Extension Manager of Browsers, click "Load unpacked" button and select the directory.
+
+Or install from Browser Extension Repository:
+```
+https://chrome.google.com/webstore/detail/internet-archive-download/keimonnoakgkpnifppoomfdlkadghkjb
+https://microsoftedge.microsoft.com/addons/detail/internet-archive-download/cnpoedgimjaecinmgfnfhfmcpcngeeje
+```
+
+## Config
+No config needed.
 
 ## Usage
-Set default download folder and make sure any download in the browser does not show "Save as ..." dialog,
+After borrowing a book on archive.org, a new button named "Download" will appear below the book reading window, just beside the "Favorite" button. Press it to download. While downloading, the button will become a download progress bar.
 
-Enable the CORS extension with option Access-Control-Allow-Credentials on.
+After click the "borrow for 1 hour" button.
 
-In Internet Archive website, find a book and borrow it, click the extension button from the toolbar. then press "Download" link. The downloads will begin.
+<image src="resources/borrow.png">
+
+When the download begins.
+
+<image src="resources/download.png">
+
+## License
+[LGPL3](LICENSE) ©Element Davv

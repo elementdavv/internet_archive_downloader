@@ -1,0 +1,37 @@
+{
+    "manifest_version": 3
+    , "author": "Element Davv <lakedai@hotmail.com>"
+    , "description": "__MSG_description__"
+    , "homepage_url": "https://github.com/elementdavv/internet_archive_downloader"
+    , "name": "Internet Archive Downloader"
+    , "version": "0.2.0"
+    , "default_locale": "en"
+    , "icons": {
+        "128": "images/logo128.png"
+    }
+    , "action": {
+        "default_icon": {
+            "128": "images/logo128.png"
+        }
+        , "default_title": "__MSG_title__"
+    }
+    , "background": {
+        "service_worker": "js/bg.js"
+        , "type": "module"
+    }
+    , "permissions": [
+        "tabs"
+        , "scripting"
+        , "declarativeNetRequest"
+    ]
+    , "host_permissions": [
+        "\u003Call_urls>"
+    ]
+    , "web_accessible_resources": [{
+        "resources": [
+            "css/*"
+            , "js/*"
+        ]
+        , "matches": ["https://archive.org/*"]
+    }]
+}
