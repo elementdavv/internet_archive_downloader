@@ -29,21 +29,47 @@ export default function(){
         loadcss("/css/iad.css");
         const ab1 = ab[0];
         const download = chrome.i18n.getMessage('download');
-        const html = 
-            "<div class='topinblock share-button'> \
+        const html = " \
+            <div class='topinblock button quality-btn'> \
+                <select id='iadqualityid' class='iadselect'> \
+                    <option value='1' selected>★★★★</option> \
+                </select> \
+                <div class='iadlabel'>Quality</div> \
+            </div> \
+            <div class='topinblock download-btn'> \
                 <button class='button' type='button' onclick=window.postMessage({from:'iad',cmd:'begin'},'*')> \
                     <div> \
                         <span class='iconochive-download'></span> \
                         <span class='icon-label' id='iadprogressid'>" + download + "</span> \
                     </div> \
                 </button> \
-            </div>";
+            </div> \
+            ";
         ab1.insertAdjacentHTML("afterbegin", html);
+    }
+
+    function addquality() {
+        const ind = src.indexOf('scale=');
+        if (ind == -1) return;
+        const q = parseInt(src.substr(ind + 6, 1));
+        if (q > 1) {
+            var s = document.getElementById('iadqualityid');
+            const star = "★★★★";
+            var n = 0;
+            for (var i = 2; i <= q; i <<= 1) {
+                var o = document.createElement('option');
+                o.value = i;
+                o.innerText = star.substring(++n);
+                s.appendChild(o);
+            }
+        }
     }
 
     var src = "";
 
     function findSrc() {
+        if (document.querySelector("meta[property='mediatype']").content != "texts") return 1;
+        if (document.getElementsByTagName("ia-book-actions").length == 0) return 1;
         src = "";
         const brpageimage = document.getElementsByClassName("BRpageimage");
         if (brpageimage.length == 0) { return 0; }
@@ -53,12 +79,12 @@ export default function(){
     }
 
     var step = 0;
-    const MAXSTEP = 5;
+    const STEPLIMIT = 8;
 
     function check() {
         const st = findSrc();
         if (st == 0) {
-            if (++step == MAXSTEP) {
+            if (++step == STEPLIMIT) {
                 clearInterval(intervalid)
                 intervalid = null;
             }
@@ -66,7 +92,10 @@ export default function(){
         else {
             clearInterval(intervalid);
             intervalid = null;
-            if (st == 2) addbtn();
+            if (st == 2) {
+                addbtn();
+                addquality();
+            }
         }
     }
 
@@ -75,34 +104,43 @@ export default function(){
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    var status = 0;             // 0:idle, 1:downloading, 2:completed, 3:failed
     var pagecount = 0;          // page number of the book
+    var status = 0;             // 0:idle, 1:downloading, 2:completed, 3:failed
+    var stop = false;           // whether to stop process
 
     async function begin() {
-        if (status == 1) 
+        if (status == 1) {
+            if (confirm(chrome.i18n.getMessage("confirmstop"))) {
+                stop = true;
+                console.log("the user stoped a process.");
+            }
             return;
+        }
         if (status == 2 || status == 3) {
-            progress().textContent = chrome.i18n.getMessage("download");
-            status = 0;
+            readynotify();
             return;
         }
 
         if (findSrc() != 2) return;
-
         console.log(`archive.org PDF Books Downloader: ${new Date()}`);
-
-        const brcurrentpage = document.getElementsByClassName("BRcurrentpage");
-        if (brcurrentpage.length == 0) {
-            alert(chrome.i18n.getMessage("pagenotfounderror"))
-        }
-        else {
-            const pagerange = brcurrentpage[0].textContent;
-            pagecount = parseInt(pagerange.split(" ")[2]);
-            console.log("pagecount:" + pagecount);
+        getPageCount();
+        if (pagecount > 0) {
             parseSrc();
-            download();
+            await download();
+        }
+        else { 
+            alert(chrome.i18n.getMessage("pagenotfounderror"));
         }
     };
+
+    function getPageCount() {
+        const brcurrentpage = document.getElementsByClassName("BRcurrentpage");
+        if (brcurrentpage.length > 0) {
+            const pagerange = brcurrentpage[0].textContent;
+            pagecount = parseInt(pagerange.split(" ")[2]);
+            console.log(`pagecount: ${pagecount}`);
+        }
+    }
 
     const holder = "{index}";   // place holder of the template
     var fileid = "";            // base filename of the book
@@ -118,7 +156,7 @@ export default function(){
     * &rotate=0
     */
     function parseSrc() {
-        console.log("src:" + src);
+        console.log(`src: ${src}`);
         const srcsp = src.split("&");
         fileid = srcsp[2].substring(3)
         filename = `${fileid}.pdf`;
@@ -141,19 +179,22 @@ export default function(){
             }
             url = src1 + url;
         }
-        url = srcsp[0] + "&" + url + "&" + srcsp[2] + "&" + srcsp[3] + "&" + srcsp[4];
+        const scale = document.getElementById('iadqualityid').value;
+        console.log(`scale: ${scale}`);
+        url = `${srcsp[0]}&${url}&${srcsp[2]}&scale=${scale}&${srcsp[4]}`;
     }
 
+    var filehandle = null;      // filesystemfilehandle
     var writer = null;          // file stream writer
     var doc = null;             // pdf document object
     var fileset = null;         // downloading file set
     var pageindex = 0;          // current downloading number
-    var stop = false;           // whether to stop immediately
     var complete = 0;           // sucessful download number
     var err = [];               // err message
-    const MAXNUMBER = 5;        // parallel download limit
+    const FILELIMIT = 5;        // parallel download limit
 
     async function download() {
+        filehandle = null;
         writer = null;
         doc = null;
         fileset = new Set();
@@ -161,15 +202,11 @@ export default function(){
         stop = false;
         complete = 0;
         err = [];
-        console.log(`there are ${pagecount} chunks in all.`)
+        console.log(`there are ${pagecount} chunks at all.`)
         try {
             await createDoc();
         } catch(e) {
-            if (writer) {
-                writer.close();
-                writer = null;
-            }
-            doc = null;
+            await clean();
             console.log(e);
             if (e.code != 20) {
                 alert(chrome.i18n.getMessage("alerterror", e.toString()));
@@ -181,7 +218,7 @@ export default function(){
     }
 
     function continueDownload() {
-        while (!stop && pageindex < pagecount && fileset.size < MAXNUMBER) {
+        while (!stop && pageindex < pagecount && fileset.size < FILELIMIT) {
             pageindex++;
             fileset.add(pageindex);
             console.log(`chunk ${pageindex}`);
@@ -204,25 +241,38 @@ export default function(){
                 const view = new DataView(buffer);
                 await createPage(view, pageindex);
             }
-            else throw response;
+            else
+                throw new Error(chrome.i18n.getMessage("fetchfail", [pageindex, response.status]));
         }
         catch(e) {
             fileset.delete(pageindex);
             stop = true;
             console.log(e);
             adderr(e);
-            if (fileset.size == 0) {
-                if (writer) {
-                    writer.close();
-                    writer = null;
-                }
-                doc = null;
-                if (err.length > 0) {
-                    alert(chrome.i18n.getMessage("alerterror", err.join('.\n')));
-                }
-                failnotify();
-            }
+            await giveup();
         };
+    }
+
+    async function giveup() {
+        if (fileset.size == 0) {
+            await clean();
+            if (err.length > 0) {
+                alert(chrome.i18n.getMessage("alerterror", err.join('.\n')));
+            }
+            failnotify();
+        }
+    }
+
+    async function clean() {
+        doc = null;
+        if (writer) {
+            await writer.close();
+            writer = null;
+        }
+        if (filehandle) {
+            await filehandle.remove();
+            filehandle = null;
+        }
     }
 
     function adderr(e) {
@@ -244,7 +294,10 @@ export default function(){
         });
         doc.image(view, 0, 0);
         fileset.delete(pageindex);
-        if (++complete == pagecount) {
+        if (stop) {
+            await giveup();
+        }
+        else if (++complete == pagecount) {
             doc.end();
             completenotify();
             console.log("download completed.")
@@ -269,7 +322,7 @@ export default function(){
                     }
                 ]
             };
-            const filehandle = await showSaveFilePicker(options);
+            filehandle = await showSaveFilePicker(options);
             const writable = await filehandle.createWritable();
             writer = await writable.getWriter();
             doc = new PDFDocument(writer, {
@@ -284,9 +337,10 @@ export default function(){
     }
 
     function startnotify() {
-        progress().classList.add('iadprogress');
-        progress().textContent = chrome.i18n.getMessage("downloading");
-        progress().style.width = "0%";
+        const p = progress();
+        p.classList.add('iadprogress');
+        p.textContent = chrome.i18n.getMessage("downloading");
+        p.style.width = '0%';
         status = 1;
     }
 
@@ -295,15 +349,22 @@ export default function(){
     }
 
     function completenotify() {
-        progress().classList.remove('iadprogress');
-        progress().textContent = chrome.i18n.getMessage("complete");
+        const p = progress();
+        p.classList.remove('iadprogress');
+        p.textContent = chrome.i18n.getMessage("complete");
         status = 2;
     }
 
     function failnotify() {
-        progress().classList.remove('iadprogress');
-        progress().textContent = chrome.i18n.getMessage("fail");
+        const p = progress();
+        p.classList.remove('iadprogress');
+        p.textContent = chrome.i18n.getMessage("fail");
         status = 3;
+    }
+
+    function readynotify() {
+        progress().textContent = chrome.i18n.getMessage("download");
+        status = 0;
     }
 
     function progress() {

@@ -3,6 +3,8 @@
     , "title": { "message": "archive.org PDF Books Downloader" }
     , "pagenotfounderror": { "message": "Error: Book info not found. Refresh and try again." }
     , "alerterror": { "message": "$1.\nPlease contact the developer." }
+    , "confirmstop": { "message": "Do you really want to stop?" }
+    , "fetchfail": { "message": "Page $1 status: $2" }
     , "download": { "message": "Download" }
     , "downloading": { "message": "Downloading" }
     , "complete": { "message": "Completed" }

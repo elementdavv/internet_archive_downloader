@@ -4,21 +4,20 @@
  *
  * Distributed under terms of the GPL3 license.
  */
-(async function(){
+(function(){
     'use strict';
 
     chrome.action.onClicked.addListener(tab => {
-        const newUrl = "https://archive.org";
-        chrome.tabs.create({ url: newUrl })
+        const url = "https://archive.org";
+        chrome.tabs.create({ url: url })
     });
 
-    const url = "https://archive.org/details";
-
     chrome.tabs.onUpdated.addListener((tabid, changeinfo, tab) => {
+        const url = "https://archive.org/details";
         if (changeinfo.status == 'complete' && tab.url.indexOf(url) == 0) {
             chrome.scripting.executeScript({
                 files: ['js/content.js']
-                , target: {tabId: tab.id}
+                , target: {tabId: tabid}
             });
         }
     });

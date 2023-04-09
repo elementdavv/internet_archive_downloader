@@ -1,3 +1,26 @@
+.action-buttons-section .download-btn .button:hover,
+.action-buttons-section .download-btn .button:focus {
+    color: #3cb371 !important;
+    border: 2px solid #3cb371;
+    background-color: #d9e8f4;
+}
+.action-buttons-section .quality-btn:hover,
+.action-buttons-section .quality-btn:focus {
+    color: #bc8f8f !important;
+    border: 2px solid #bc8f8f;
+    background-color: #d9e8f4;
+}
 .iadprogress {
-    background-color: #20c997;
+    background-color: #3cb371;
+}
+.iadselect {
+    -webkit-appearance: none;
+    text-align: center;
+    background-color: transparent;
+    border-width: 0;
+    outline: none;
+    cursor: pointer;
+}
+.iadlabel {
+    cursor: default;
 }
