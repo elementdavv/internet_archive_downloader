@@ -9,4 +9,6 @@
     , "downloading": { "message": "Downloading" }
     , "complete": { "message": "Completed" }
     , "fail": { "message": "Failed" }
+    , "titledownload": { "message": "Download this item" }
+    , "titlequality": { "message": "Choose page quality" }
 }

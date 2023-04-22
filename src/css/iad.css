@@ -24,3 +24,83 @@
 .iadlabel {
     cursor: default;
 }
+.action-buttons-section .download-btn .button {
+  &:before {
+    content: "";
+    display: block;
+    opacity: 0;
+    transition: opacity 300ms ease-out;
+    position: absolute;
+    z-index: 9998;
+    top: 57px;
+    left: 148px;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 5px solid rgba(128, 128, 128, 1.0);
+  }
+  &:after {
+    content: "__MSG_titledownload__";
+    display: block;
+    opacity: 0;
+    transition: opacity 300ms ease-out;
+    position: absolute;
+    z-index: 9999;
+    top: 62px;
+    left: 99px;
+    width: 110px;
+    height: 23px;
+    color: #eee;
+    font-size: 11px;
+    line-height: 23px;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.9);
+    border-radius: 4px;
+  }
+  &:hover {
+    &:before, &:after {
+    opacity: 1;
+    }
+  }
+}
+.action-buttons-section .quality-btn {
+  &:before {
+    content: "";
+    display: block;
+    opacity: 0;
+    transition: opacity 300ms ease-out;
+    position: absolute;
+    z-index: 9998;
+    top: 57px;
+    left: 69px;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 5px solid rgba(128, 128, 128, 1.0);
+  }
+  &:after {
+    content: "__MSG_titlequality__";
+    display: block;
+    opacity: 0;
+    transition: opacity 300ms ease-out;
+    position: absolute;
+    z-index: 9999;
+    top: 62px;
+    left: 16px;
+    width: 116px;
+    height: 23px;
+    color: #eee;
+    font-size: 11px;
+    line-height: 23px;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.9);
+    border-radius: 4px;
+  }
+  &:hover {
+    &:before, &:after {
+    opacity: 1;
+    }
+  }
+}

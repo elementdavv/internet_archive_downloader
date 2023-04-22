@@ -69,13 +69,25 @@ export default function(){
 
     function findSrc() {
         if (document.querySelector("meta[property='mediatype']").content != "texts") return 1;
-        if (document.getElementsByTagName("ia-book-actions").length == 0) return 1;
         src = "";
         const brpageimage = document.getElementsByClassName("BRpageimage");
-        if (brpageimage.length == 0) { return 0; }
+        if (brpageimage.length == 0) {
+            console.log("iad: waiting ...");
+            return 0;
+        }
         src = brpageimage[brpageimage.length -1].src;
-        if (src.indexOf("BookReaderImages") == -1) { return 1; }
-        return 2;
+        if (src.indexOf("BookReaderImages") == -1) {
+            console.log('iad: book not available');
+            return 1;
+        }
+        else if (document.getElementsByTagName("ia-book-actions").length == 0) {
+            console.log('iad: book always available');
+            return 1;
+        }
+        else {
+            console.log('iad: done');
+            return 2;
+        }
     }
 
     var step = 0;
@@ -128,7 +140,7 @@ export default function(){
             parseSrc();
             await download();
         }
-        else { 
+        else {
             alert(chrome.i18n.getMessage("pagenotfounderror"));
         }
     };
@@ -147,7 +159,7 @@ export default function(){
     var filename = "";          // download filename
     var url = "";               // url template for page url
 
-    /* src example: 
+    /* src example:
     * :https://ia800406.us.archive.org/BookReader/BookReaderImages.php
     * ?zip=/32/items/isbn_0809463962/isbn_0809463962_jp2.zip
     * &file=isbn_0809463962_jp2/isbn_0809463962_0001.jp2
@@ -327,11 +339,11 @@ export default function(){
             writer = await writable.getWriter();
             doc = new PDFDocument(writer, {
                 pagecount: pagecount
-                , info: { 
+                , info: {
                     Title: filename,
                     Author: 'Element Davv',
                     Homepage: 'https://github.com/elementdavv/internet_archive_downloader',
-                } 
+                }
             });
         }
     }
