@@ -65,7 +65,8 @@ export default function(){
         }
     }
 
-    var src = "";
+    var src = "";               // page src
+    var pagecount = 0;          // page number of the book
 
     function findSrc() {
         if (document.querySelector("meta[property='mediatype']").content != "texts") return 1;
@@ -86,6 +87,8 @@ export default function(){
         }
         else {
             console.log('iad: done');
+            parseSrc();
+            getPageCount();
             return 2;
         }
     }
@@ -116,7 +119,6 @@ export default function(){
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    var pagecount = 0;          // page number of the book
     var status = 0;             // 0:idle, 1:downloading, 2:completed, 3:failed
     var stop = false;           // whether to stop process
 
@@ -133,11 +135,10 @@ export default function(){
             return;
         }
 
-        if (findSrc() != 2) return;
         console.log(`archive.org PDF Books Downloader: ${new Date()}`);
-        getPageCount();
+        getQuality();
+        getMetadata();
         if (pagecount > 0) {
-            parseSrc();
             await download();
         }
         else {
@@ -158,6 +159,7 @@ export default function(){
     var fileid = "";            // base filename of the book
     var filename = "";          // download filename
     var url = "";               // url template for page url
+    var pagebegin = 0;          // page begin number
 
     /* src example:
     * :https://ia800406.us.archive.org/BookReader/BookReaderImages.php
@@ -179,6 +181,9 @@ export default function(){
         if (index > -1) {
             name = src11.substring(0, index - 4);
         }
+        pagebegin = parseInt(src11.substr(index - 4, 4));
+        if (pagebegin > 1) pagebegin = 1;
+        console.log(`pagebegin: ${pagebegin}`);
 
         url = name + holder;
         if (index > -1) {
@@ -191,9 +196,39 @@ export default function(){
             }
             url = src1 + url;
         }
+        // srcsp[3]
+        url = `${srcsp[0]}&${url}&${srcsp[2]}&scale=__SCALE__&${srcsp[4]}`;
+    }
+
+    function getQuality() {
         const scale = document.getElementById('iadqualityid').value;
         console.log(`scale: ${scale}`);
-        url = `${srcsp[0]}&${url}&${srcsp[2]}&scale=${scale}&${srcsp[4]}`;
+        url = url.replace('__SCALE__', scale);
+    }
+
+    var info = {};
+    function getMetadata() {
+        info.Producer = 'Element Davv';
+        const title = document.getElementsByClassName('item-title');
+        if (title.length > 0) {
+            info.Title = title[0].innerText;
+        }
+        const meta = new Map();
+        meta.set('by', 'Author');
+        meta.set('Publication date', 'Publication date')
+        meta.set('Topics', 'Subject')
+        meta.set('Publisher', 'Publisher')
+        meta.set('Contributer', 'Contributer')
+        meta.set('Language', 'Language')
+        meta.set('Isbn', 'ISBN')
+        meta.set('Pages', 'Pages')
+        const metadata = document.getElementsByClassName('metadata-definition');
+        for (var i = 0; i < metadata.length; i++) {
+            const metaname = metadata[i].children[0].innerText;
+            if (meta.has(metaname)) {
+                info[meta.get(metaname)] = metadata[i].children[1].innerText;
+            }
+        }
     }
 
     var filehandle = null;      // filesystemfilehandle
@@ -239,8 +274,10 @@ export default function(){
     }
 
     async function syncfetch(pageindex) {
-        var s = pageindex.toString().padStart(4, "0");
+        const pageno = pageindex - 1 + pagebegin;
+        var s = pageno.toString().padStart(4, "0");
         const newurl = url.replace(holder, s);
+        // const newurl = "https://expertphotography.b-cdn.net/wp-content/uploads/2011/06/NYEBrody-Beach-020111-2002.jpg";
         try {
             const response = await fetch(newurl, {
                 "method": "GET",
@@ -253,8 +290,9 @@ export default function(){
                 const view = new DataView(buffer);
                 await createPage(view, pageindex);
             }
-            else
+            else {
                 throw new Error(chrome.i18n.getMessage("fetchfail", [pageindex, response.status]));
+            }
         }
         catch(e) {
             fileset.delete(pageindex);
@@ -339,11 +377,7 @@ export default function(){
             writer = await writable.getWriter();
             doc = new PDFDocument(writer, {
                 pagecount: pagecount
-                , info: {
-                    Title: filename,
-                    Author: 'Element Davv',
-                    Homepage: 'https://github.com/elementdavv/internet_archive_downloader',
-                }
+                , info: info
             });
         }
     }

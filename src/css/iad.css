@@ -24,8 +24,7 @@
 .iadlabel {
     cursor: default;
 }
-.action-buttons-section .download-btn .button {
-  &:before {
+.action-buttons-section .download-btn .button:before {
     content: "";
     display: block;
     opacity: 0;
@@ -40,7 +39,7 @@
     border-right: 5px solid transparent;
     border-bottom: 5px solid rgba(128, 128, 128, 1.0);
   }
-  &:after {
+.action-buttons-section .download-btn .button:after {
     content: "__MSG_titledownload__";
     display: block;
     opacity: 0;
@@ -58,14 +57,11 @@
     background: rgba(0, 0, 0, 0.9);
     border-radius: 4px;
   }
-  &:hover {
-    &:before, &:after {
+.action-buttons-section .download-btn .button:hover:before,
+.action-buttons-section .download-btn .button:hover:after {
     opacity: 1;
-    }
-  }
 }
-.action-buttons-section .quality-btn {
-  &:before {
+.action-buttons-section .quality-btn:before {
     content: "";
     display: block;
     opacity: 0;
@@ -80,7 +76,7 @@
     border-right: 5px solid transparent;
     border-bottom: 5px solid rgba(128, 128, 128, 1.0);
   }
-  &:after {
+.action-buttons-section .quality-btn:after {
     content: "__MSG_titlequality__";
     display: block;
     opacity: 0;
@@ -98,9 +94,7 @@
     background: rgba(0, 0, 0, 0.9);
     border-radius: 4px;
   }
-  &:hover {
-    &:before, &:after {
+.action-buttons-section .quality-btn:hover:before,
+.action-buttons-section .quality-btn:hover:after {
     opacity: 1;
-    }
-  }
 }
