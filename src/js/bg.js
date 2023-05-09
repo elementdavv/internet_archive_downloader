@@ -4,6 +4,7 @@
  *
  * Distributed under terms of the GPL3 license.
  */
+
 (function(){
     'use strict';
 

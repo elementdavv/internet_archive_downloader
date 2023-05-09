@@ -10,23 +10,43 @@ import PDFDocument from './pdf/document.js';
 export default function(){
     'use strict';
 
-    window.addEventListener("message", event => {
-        const data = event.data;
-        if (data.from == 'iad' && data.cmd == 'begin') {
-            begin();
-        }
-    });
+    var br = {};                // book reader
 
-    function loadcss(href) {
+    window.onmessage = evt => {
+        console.log(`message: ${evt.data.from} ${evt.data.cmd}`);
+        const dt = evt.data;
+        if (dt.from != 'iad') return;
+        if (dt.cmd == 'init') {
+            br = JSON.parse(dt.content); 
+            if (br.bookId) init();
+        }
+        else if (dt.cmd == 'begin') { begin(); }
+    };
+
+    function loadScript(href) {
+        console.log(`load ${href}`);
+        var script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = chrome.runtime.getURL(href);
+        document.head.appendChild(script);
+    }
+
+    function loadCss(href) {
+        console.log(`load ${href}`);
         var link = document.createElement('link');
         link.rel = 'stylesheet';
         link.href = chrome.runtime.getURL(href);
         document.head.appendChild(link);
     }
 
-    function addbtn() {
+    function loadButton() {
         const ab = document.getElementsByClassName('action-buttons-section');
-        loadcss("/css/iad.css");
+        if (ab.length == 0) {
+            console.log("warn: no action buttons section");
+            return;
+        }
+        console.log('load buttons');
+        loadCss("/css/iad.css");
         const ab1 = ab[0];
         const download = chrome.i18n.getMessage('download');
         const html = " \
@@ -48,79 +68,80 @@ export default function(){
         ab1.insertAdjacentHTML("afterbegin", html);
     }
 
-    function addquality() {
-        const ind = src.indexOf('scale=');
-        if (ind == -1) return;
-        const q = parseInt(src.substr(ind + 6, 1));
-        if (q > 1) {
-            var s = document.getElementById('iadqualityid');
-            const star = "★★★★";
-            var n = 0;
-            for (var i = 2; i <= q; i <<= 1) {
-                var o = document.createElement('option');
-                o.value = i;
-                o.innerText = star.substring(++n);
-                s.appendChild(o);
+    function loadQuality() {
+        var s = document.getElementById('iadqualityid');
+        if (!s) return;
+        console.log('load qualities');
+        const factors = br.reductionFactors;
+        const star = "★★★★";
+        var n = 0;
+        var lastscale = 1;
+        factors.forEach((f, i) => {
+            const scale = Math.pow(2, Math.floor(Math.log2(Math.max(1, f.reduce))));
+            if (scale > lastscale) {
+                if (n < 3) {
+                    var o = document.createElement('option');
+                    o.value = scale;
+                    o.innerText = star.substring(++n);
+                    s.appendChild(o);
+                }
+                lastscale = scale;
             }
-        }
+        });
     }
 
-    var src = "";               // page src
-    var pagecount = 0;          // page number of the book
+    var fileid = "";            // book basename
+    var filename = "";          // download filename
+    var data = [];              // page urls
+    var pagecount = 0;          // page count
 
-    function findSrc() {
-        if (document.querySelector("meta[property='mediatype']").content != "texts") return 1;
-        src = "";
-        const brpageimage = document.getElementsByClassName("BRpageimage");
-        if (brpageimage.length == 0) {
-            console.log("iad: waiting ...");
-            return 0;
-        }
-        src = brpageimage[brpageimage.length -1].src;
-        if (src.indexOf("BookReaderImages") == -1) {
-            console.log('iad: book not available');
-            return 1;
-        }
-        else if (document.getElementsByTagName("ia-book-actions").length == 0) {
-            console.log('iad: book always available');
-            return 1;
-        }
-        else {
-            console.log('iad: done');
-            parseSrc();
-            getPageCount();
-            return 2;
-        }
+    function getBookInfo() {
+        console.log('get book info');
+        fileid = br.bookId;
+        filename = `${fileid}.pdf`;
+        data = br.data;
+        pagecount = data.length;
     }
 
-    var step = 0;
-    const STEPLIMIT = 8;
+    var info = {};              // book metadata
 
-    function check() {
-        const st = findSrc();
-        if (st == 0) {
-            if (++step == STEPLIMIT) {
-                clearInterval(intervalid)
-                intervalid = null;
+    function getMetadata() {
+        console.log('get metadata');
+        const title = document.getElementsByClassName('item-title');
+        if (title.length > 0) {
+            info.Title = title[0].innerText;
+        }
+        const meta = new Map();
+        meta.set('by', 'Author');
+        meta.set('Isbn', 'ISBN')
+        meta.set('Language', 'Language')
+        meta.set('Publisher', 'Publisher')
+        meta.set('Publication date', 'Date')
+        meta.set('Contributor', 'Contributor')
+        const metadata = document.getElementsByClassName('metadata-definition');
+        for (var i = 0; i < metadata.length; i++) {
+            const metaname = metadata[i].children[0].innerText;
+            if (meta.has(metaname)) {
+                info[meta.get(metaname)] = metadata[i].children[1].innerText;
             }
         }
-        else {
-            clearInterval(intervalid);
-            intervalid = null;
-            if (st == 2) {
-                addbtn();
-                addquality();
-            }
-        }
+        info.Producer = 'Element Davv';
     }
 
-    var intervalid = setInterval(check, 1000);
+    function init(){
+        console.log('init begin');
+        loadButton();
+        loadQuality();
+        getBookInfo();
+        getMetadata();
+        console.log('init complete');
+    }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////
 
     var status = 0;             // 0:idle, 1:downloading, 2:completed, 3:failed
-    var stop = false;           // whether to stop process
+    var stop = false;           // stop indicator
 
     async function begin() {
         if (status == 1) {
@@ -134,122 +155,37 @@ export default function(){
             readynotify();
             return;
         }
-
-        console.log(`archive.org PDF Books Downloader: ${new Date()}`);
+        console.log(`download ${filename} at ${new Date()}`);
         getQuality();
-        getMetadata();
-        if (pagecount > 0) {
-            await download();
-        }
-        else {
-            alert(chrome.i18n.getMessage("pagenotfounderror"));
-        }
+        await download();
     };
 
-    function getPageCount() {
-        const brcurrentpage = document.getElementsByClassName("BRcurrentpage");
-        if (brcurrentpage.length > 0) {
-            const pagerange = brcurrentpage[0].textContent;
-            pagecount = parseInt(pagerange.split(" ")[2]);
-            console.log(`pagecount: ${pagecount}`);
-        }
-    }
-
-    const holder = "{index}";   // place holder of the template
-    var fileid = "";            // base filename of the book
-    var filename = "";          // download filename
-    var url = "";               // url template for page url
-    var pagebegin = 0;          // page begin number
-
-    /* src example:
-    * :https://ia800406.us.archive.org/BookReader/BookReaderImages.php
-    * ?zip=/32/items/isbn_0809463962/isbn_0809463962_jp2.zip
-    * &file=isbn_0809463962_jp2/isbn_0809463962_0001.jp2
-    * &id=isbn_0809463962
-    * &scale=8
-    * &rotate=0
-    */
-    function parseSrc() {
-        console.log(`src: ${src}`);
-        const srcsp = src.split("&");
-        fileid = srcsp[2].substring(3)
-        filename = `${fileid}.pdf`;
-        const src1sp = srcsp[1].split("/");
-        const src11 = src1sp[src1sp.length - 1];
-        const index = src11.lastIndexOf(".");
-        var name = src11;
-        if (index > -1) {
-            name = src11.substring(0, index - 4);
-        }
-        pagebegin = parseInt(src11.substr(index - 4, 4));
-        if (pagebegin > 1) pagebegin = 1;
-        console.log(`pagebegin: ${pagebegin}`);
-
-        url = name + holder;
-        if (index > -1) {
-            url += src11.substring(index);
-        }
-        if (src1sp.length > 1) {
-            var src1 = "";
-            for (var j = 0; j < src1sp.length - 1; j++) {
-                src1 += src1sp[j] + "/";
-            }
-            url = src1 + url;
-        }
-        // srcsp[3]
-        url = `${srcsp[0]}&${url}&${srcsp[2]}&scale=__SCALE__&${srcsp[4]}`;
-    }
+    var quality = 1;            // scale
 
     function getQuality() {
-        const scale = document.getElementById('iadqualityid').value;
-        console.log(`scale: ${scale}`);
-        url = url.replace('__SCALE__', scale);
-    }
-
-    var info = {};
-    function getMetadata() {
-        info.Producer = 'Element Davv';
-        const title = document.getElementsByClassName('item-title');
-        if (title.length > 0) {
-            info.Title = title[0].innerText;
-        }
-        const meta = new Map();
-        meta.set('by', 'Author');
-        meta.set('Publication date', 'Publication date')
-        meta.set('Topics', 'Subject')
-        meta.set('Publisher', 'Publisher')
-        meta.set('Contributer', 'Contributer')
-        meta.set('Language', 'Language')
-        meta.set('Isbn', 'ISBN')
-        meta.set('Pages', 'Pages')
-        const metadata = document.getElementsByClassName('metadata-definition');
-        for (var i = 0; i < metadata.length; i++) {
-            const metaname = metadata[i].children[0].innerText;
-            if (meta.has(metaname)) {
-                info[meta.get(metaname)] = metadata[i].children[1].innerText;
-            }
-        }
+        quality = document.getElementById('iadqualityid').value;
+        console.log(`quality: ${quality}`);
     }
 
     var filehandle = null;      // filesystemfilehandle
     var writer = null;          // file stream writer
     var doc = null;             // pdf document object
     var fileset = null;         // downloading file set
-    var pageindex = 0;          // current downloading number
-    var complete = 0;           // sucessful download number
-    var err = [];               // err message
+    var pageindex = 0;          // current page number
+    var complete = 0;           // completed count
+    var err = [];               // error messages
     const FILELIMIT = 5;        // parallel download limit
 
     async function download() {
+        console.log(`chunks: ${pagecount}`);
         filehandle = null;
         writer = null;
         doc = null;
         fileset = new Set();
         pageindex = 0;
-        stop = false;
         complete = 0;
         err = [];
-        console.log(`there are ${pagecount} chunks at all.`)
+        stop = false;
         try {
             await createDoc();
         } catch(e) {
@@ -274,12 +210,12 @@ export default function(){
     }
 
     async function syncfetch(pageindex) {
-        const pageno = pageindex - 1 + pagebegin;
-        var s = pageno.toString().padStart(4, "0");
-        const newurl = url.replace(holder, s);
-        // const newurl = "https://expertphotography.b-cdn.net/wp-content/uploads/2011/06/NYEBrody-Beach-020111-2002.jpg";
+        var uri = data[pageindex - 1].uri;
+        uri += uri.indexOf("?") > -1 ? "&" : "?";
+        uri += "scale=" + quality + "&rotate=0";
+        // const uri = "https://expertphotography.b-cdn.net/wp-content/uploads/2011/06/NYEBrody-Beach-020111-2002.jpg";
         try {
-            const response = await fetch(newurl, {
+            const response = await fetch(uri, {
                 "method": "GET",
                 "credentials": "include",
                 "responseType": "arraybuffer",
@@ -326,17 +262,21 @@ export default function(){
     }
 
     function adderr(e) {
-        var exi = false;
+        var ef = false;
+        const es = e.toString();
         err.forEach((item, index) => {
-            if (item == e.toString())
-                exi = true;
+            if (item == es)
+                ef = true;
         });
-        if (!exi) err.push(e.toString());
+        if (!ef) err.push(es);
     }
 
+    const JPEG_WIDTH = 165;
+    const JPEG_HEIGHT = 163;
+
     async function createPage(view, pageindex) {
-        const width = view.getUint16(165);
-        const height = view.getUint16(163)
+        const width = view.getUint16(JPEG_WIDTH);
+        const height = view.getUint16(JPEG_HEIGHT);
         doc.addPage({
             pageindex: pageindex - 1
             , margin: 0
@@ -350,7 +290,6 @@ export default function(){
         else if (++complete == pagecount) {
             doc.end();
             completenotify();
-            console.log("download completed.")
         }
         else {
             updatenotify();
@@ -359,30 +298,32 @@ export default function(){
     }
 
     async function createDoc() {
-        if (doc == null) {
-            const options = {
-                startIn: 'downloads'
-                , suggestedName: filename
-                , types: [
-                    {
-                        description: 'PDF document'
-                        , accept: {
-                            'application/pdf': ['.pdf']
-                        }
+        if (doc) return;
+        const options = {
+            startIn: 'downloads'
+            , suggestedName: filename
+            , types: [
+                {
+                    description: 'PDF document'
+                    , accept: {
+                        'application/pdf': ['.pdf']
                     }
-                ]
-            };
-            filehandle = await showSaveFilePicker(options);
-            const writable = await filehandle.createWritable();
-            writer = await writable.getWriter();
-            doc = new PDFDocument(writer, {
-                pagecount: pagecount
-                , info: info
-            });
-        }
+                }
+            ]
+        };
+        filehandle = await showSaveFilePicker(options);
+        const writable = await filehandle.createWritable();
+        writer = await writable.getWriter();
+        doc = new PDFDocument(writer, {
+            pagecount: pagecount
+            , info: info
+        });
     }
 
+    var t = 0;                 // performance now
+
     function startnotify() {
+        t = performance.now();
         const p = progress();
         p.classList.add('iadprogress');
         p.textContent = chrome.i18n.getMessage("downloading");
@@ -395,6 +336,10 @@ export default function(){
     }
 
     function completenotify() {
+        const ss = (performance.now() - t) / 1000;
+        const m = ~~(ss / 60);
+        const s = ~~(ss % 60);
+        console.log(`download completed in ${m}m${s}s`);
         const p = progress();
         p.classList.remove('iadprogress');
         p.textContent = chrome.i18n.getMessage("complete");
@@ -417,4 +362,6 @@ export default function(){
         return document.getElementById('iadprogressid');
     }
 
+    console.log('Internet Archive Downloader in action');
+    loadScript("/js/stub.js");
 };

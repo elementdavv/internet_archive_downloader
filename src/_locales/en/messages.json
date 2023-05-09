@@ -1,9 +1,8 @@
 {
     "description": { "message": "Download PDF books from archive.org" }
-    , "title": { "message": "archive.org PDF Books Downloader" }
-    , "pagenotfounderror": { "message": "Error: Book info not found. Refresh and try again." }
-    , "alerterror": { "message": "$1.\nPlease contact the developer." }
-    , "confirmstop": { "message": "Would you like to stop? It needs a little while to stop completely." }
+    , "title": { "message": "Internet Archive Downloader" }
+    , "alerterror": { "message": "$1\nPlease contact the developer." }
+    , "confirmstop": { "message": "Would you like to quit immediately?\nIt will need a little while to clean up." }
     , "fetchfail": { "message": "Page $1 status $2" }
     , "download": { "message": "Download" }
     , "downloading": { "message": "Downloading" }

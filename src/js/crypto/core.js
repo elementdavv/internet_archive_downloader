@@ -1,6 +1,5 @@
 /**
  * CryptoJS core components.
- * globals window, global, require
  */
 var CryptoJS = CryptoJS || (function (Math, undefined) {
 
