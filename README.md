@@ -4,7 +4,7 @@ There are many tons of books on Internet Archive(archive.org) available for publ
 
 The extension works by retrieving every page of a book after borrowing and combining them into a file. So it does not break the rules of the website of archive.org. The pages of a book are not processed in memory, instead each page on successful retrieval is feeded immediately to a file stream on local disk. So it can handle files of almost unlimited size with minimal impact on memory.
 
-Note that the extension was only tested on chrome and edge with latest version. Other chromium based browsers should work on theory but there is no warranty.
+Note that the extension was only tested on chrome and edge with latest version under Ubuntu, Windows and MacOS. Other chromium based browsers should work on theory but there is no warranty. It does not work on Android and iOS.
 
 ## Install
 Grab the release zip file, extract it to a directory. Then from your browser(Chrome or Edge), open Extension Manager page, click "Load unpacked" button and select the extracted directory.
