@@ -5,6 +5,7 @@
  * Distributed under terms of the GPL3 license.
  */
 
+import StreamSaver from './utils/streamsaver.js';
 import PDFDocument from './pdf/document.js';
 import ZIPDocument from './zip/document.js';
 
@@ -144,7 +145,24 @@ export default function(){
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    var browsercancel = false;          // canceled from browser download list
+
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        console.log(message);
+        if (message.from != 'iad') return;
+        if (message.cmd == 'error') {
+            if (stop) return;
+            stop = true;
+            browsercancel = true;
+            console.log("process error: " + message.error);
+            if (message.error != 'USER_CANCELED') {
+                adderr(message.error);
+            }
+        }
+    });
+
     var stop = false;           // stop indicator
+    var filename = "";          // download filename
 
     async function begin() {
         if (status == 1) {
@@ -163,11 +181,17 @@ export default function(){
         }
 
         getDownloadInfo();
-        console.log(`download ${filename} of quality ${quality} at ${new Date()}`);
-        await download();
+        const response = await chrome.runtime.sendMessage({
+            from: 'iad',
+            cmd: 'download',
+            fileid: filename
+        });
+        if (response.fileid == filename) {
+            console.log(`download ${filename} of quality ${quality} at ${new Date()}`);
+            await download();
+        }
     };
 
-    var filename = "";          // download filename
     var quality = 1;            // scale
 
     function getDownloadInfo() {
@@ -175,7 +199,6 @@ export default function(){
         quality = document.getElementById('iadqualityid').value;
     }
 
-    var filehandle = null;      // filesystemfilehandle
     var writer = null;          // file stream writer
     var doc = null;             // pdf document object
     var fileset = null;         // downloading file set
@@ -186,7 +209,6 @@ export default function(){
 
     async function download() {
         console.log(`chunks: ${pagecount}`);
-        filehandle = null;
         writer = null;
         doc = null;
         fileset = new Set();
@@ -194,8 +216,9 @@ export default function(){
         complete = 0;
         err = [];
         stop = false;
+        browsercancel = false;
         try {
-            await createDoc();
+            createDoc();
         } catch(e) {
             await clean();
             console.log(e);
@@ -249,6 +272,12 @@ export default function(){
 
     async function giveup() {
         if (fileset.size == 0) {
+            if (!browsercancel) {
+                const response = await chrome.runtime.sendMessage({
+                    from: 'iad',
+                    cmd: 'cancel',
+                });
+            }
             await clean();
             if (err.length > 0) {
                 alert(chrome.i18n.getMessage("alerterror", err.join('.\n')));
@@ -260,18 +289,14 @@ export default function(){
     async function clean() {
         doc = null;
         if (writer) {
-            await writer.close();
+            await writer.abort();
             writer = null;
-        }
-        if (filehandle) {
-            await filehandle.remove();
-            filehandle = null;
         }
     }
 
     function adderr(e) {
         var ef = false;
-        const es = e.toString();
+        const es = e.toString ? e.toString() : e;
         err.forEach((item, index) => {
             if (item == es)
                 ef = true;
@@ -281,6 +306,14 @@ export default function(){
 
     async function createPage(view, pageindex) {
         fileset.delete(pageindex);
+        var state = doc.getstate();
+        if (state) {
+            stop = true;
+            if (state.toString) state = state.toString();
+            if (state.indexOf('abort') == -1) {
+                adderr(state);
+            }
+        }
         if (stop) {
             await giveup();
             return;
@@ -321,53 +354,24 @@ export default function(){
         doc.image(view, 0, 0);
     }
 
-    async function createDoc() {
+    function createDoc() {
         if (doc) return;
+        const writable = StreamSaver.createWriteStream(filename);
+        // writer.write(uInt8)
+        writer = writable.getWriter();
         if (ctrl) {
-            await createZIPDoc();
+            createZIPDoc();
         }
         else {
-            await createPDFDoc();
+            createPDFDoc();
         }
     }
 
-    async function createZIPDoc() {
-        const options = {
-            startIn: 'downloads'
-            , suggestedName: filename
-            , types: [
-                {
-                    description: 'Zip archive'
-                    , accept: {
-                        'application/zip': ['.zip']
-                    }
-                }
-            ]
-        };
-        filehandle = await showSaveFilePicker(options);
-        const writable = await filehandle.createWritable();
-        // writer.write(ArrayBuffer/TypedArray/DataView/Blob/String/StringLiteral)
-        writer = await writable.getWriter();
+    function createZIPDoc() {
         doc = new ZIPDocument(writer);
     }
 
-    async function createPDFDoc() {
-        const options = {
-            startIn: 'downloads'
-            , suggestedName: filename
-            , types: [
-                {
-                    description: 'Portable Document Format (PDF)'
-                    , accept: {
-                        'application/pdf': ['.pdf']
-                    }
-                }
-            ]
-        };
-        filehandle = await showSaveFilePicker(options);
-        const writable = await filehandle.createWritable();
-        // writer.write(ArrayBuffer/TypedArray/DataView/Blob/String/StringLiteral)
-        writer = await writable.getWriter();
+    function createPDFDoc() {
         doc = new PDFDocument(writer, {
             pagecount: pagecount
             , info: info
@@ -417,5 +421,6 @@ export default function(){
     }
 
     console.log('Internet Archive Downloader v0.5.0 in action');
+    StreamSaver.mitm = 'https://elementdavv.github.io/streamsaver.js/mitm.html?version=2.0.0'
     loadScript("/js/stub.js");
 };

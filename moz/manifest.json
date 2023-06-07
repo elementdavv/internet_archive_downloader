@@ -6,6 +6,12 @@
     , "name": "Internet Archive Downloader"
     , "version": "0.5.0"
     , "default_locale": "en"
+    , "browser_specific_settings": {
+        "gecko": {
+            "id": "internet_archive_downloader@timelegend.net"
+            , "strict_min_version": "113.0"
+        }
+    }
     , "icons": {
         "128": "images/logo128.png"
     }
@@ -16,11 +22,12 @@
         , "default_title": "__MSG_title__"
     }
     , "background": {
-        "service_worker": "js/bg.js"
+        "scripts": ["js/bg.js"]
         , "type": "module"
     }
     , "permissions": [
         "declarativeNetRequest"
+        , "downloads"
         , "scripting"
         , "tabs"
     ]
