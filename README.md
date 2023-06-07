@@ -44,11 +44,8 @@ The default is the highest quality.
 
 ## Availability 
 * Tests passed in Chrome, Edge and Firefox on Linux(Ubuntu), Windows and MacOS.
-* Other Chromium based browsers(Vivaldi, Brave, etc) / other platforms(Raspian, Jetson, etc) may work or may not. There is no warranty, b/c I can't test every one of so many of them. Your experiances or comments are welcome.
-* For Firefox, only version 113.0.2 works. Versions under 113 were not supported. Versions above 113 were all failed.
-
-## How it works
-The extension works by retrieving every page of a book after borrowing and merging them into a file. The merging process was not managed in memory. Instead each page on successful retrieval was feeded to a file stream on local disk. So it can handle a book of several thousand pages with minimal memory impact.
+* Other Chromium based browsers(Vivaldi, Brave, etc) / other platforms(Raspian, Jetson, etc) may work or may not.
+* For Firefox, only version 113.0.2 works.
 
 ## License
 [GPL3](LICENSE) ©Element Davv
