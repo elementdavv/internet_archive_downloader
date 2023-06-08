@@ -101,7 +101,7 @@ const StreamSaver = (() => {
     mc.port1.postMessage(readable, [readable])
     mc.port1.close()
     mc.port2.close()
-    supportsTransferable = true
+    // supportsTransferable = true
     // Freeze TransformStream object (can only work with native)
     Object.defineProperty(streamSaver, 'TransformStream', {
       configurable: false,
@@ -254,9 +254,9 @@ const StreamSaver = (() => {
 
     return (!useBlobFallback && ts && ts.writable) || new streamSaver.WritableStream({
       write (chunk) {
-        if (!(chunk instanceof Uint8Array)) {
-          throw new TypeError('Can only write Uint8Arrays')
-        }
+        // if (!(chunk instanceof Uint8Array)) {
+        //   throw new TypeError('Can only write Uint8Arrays')
+        // }
         if (useBlobFallback) {
           // Safari... The new IE6
           // https://github.com/jimmywarting/StreamSaver.js/issues/69

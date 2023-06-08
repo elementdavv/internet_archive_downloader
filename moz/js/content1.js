@@ -5,6 +5,7 @@
  * Distributed under terms of the GPL3 license.
  */
 
+import WebStreamPolyfill from './utils/ponyfill.es6.js';
 import StreamSaver from './utils/streamsaver.js';
 import PDFDocument from './pdf/document.js';
 import ZIPDocument from './zip/document.js';
@@ -421,6 +422,7 @@ export default function(){
     }
 
     console.log('Internet Archive Downloader v0.5.0 in action');
+    StreamSaver.WritableStream = WebStreamPolyfill.WritableStream;
     StreamSaver.mitm = 'https://elementdavv.github.io/streamsaver.js/mitm.html?version=2.0.0'
     loadScript("/js/stub.js");
 };
