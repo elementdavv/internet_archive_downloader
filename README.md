@@ -45,7 +45,7 @@ The default is the highest quality.
 ## Availability 
 * Tests passed in Chrome, Edge and Firefox on Linux(Ubuntu), Windows and MacOS.
 * Other Chromium based browsers(Vivaldi, Brave, etc) / other platforms(Raspian, Jetson, etc) may work or may not.
-* For Firefox, version 113 and above are required.
+* For Firefox, version 113 and later are required.
 
 ## License
 [GPL3](LICENSE) ©Element Davv
