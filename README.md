@@ -8,14 +8,14 @@ For Chrome and Edge:
 * Extract the package somewhere.
 * On your browser, open Extension Manager page -> Load unpacked button -> select the extracted directory.
 
-For Firefox(113.0.2):
+For Firefox:
 * Grab the latest version of package(.xpi) in the [releases](https://github.com/elementdavv/internet_archive_downloader/releases) page.
 * On your browser, open Addons Manager page -> Extensions menu -> Tools button -> Install Add-on From File -> select the downloaded package.
 * Again, Extensions menu -> Internet Archive Downloader -> Permissions -> Optional permissions -> Enable.
 
 Alternatively, install from browser extension repositories(not always up to date):
 
-[Chrome WebStore](https://chrome.google.com/webstore/detail/internet-archive-download/keimonnoakgkpnifppoomfdlkadghkjb) / [Edge Addons](https://microsoftedge.microsoft.com/addons/detail/internet-archive-download/cnpoedgimjaecinmgfnfhfmcpcngeeje) / [Mozilla Addons (Firefox 113.0.2)](https://addons.mozilla.org/en-US/firefox/addon/internet_archive_downloader/)
+[Chrome WebStore](https://chrome.google.com/webstore/detail/internet-archive-download/keimonnoakgkpnifppoomfdlkadghkjb) / [Edge Addons](https://microsoftedge.microsoft.com/addons/detail/internet-archive-download/cnpoedgimjaecinmgfnfhfmcpcngeeje) / [Mozilla Addons (Firefox)](https://addons.mozilla.org/en-US/firefox/addon/internet_archive_downloader/)
 
 ## Configuration
 None.
@@ -45,7 +45,7 @@ The default is the highest quality.
 ## Availability 
 * Tests passed in Chrome, Edge and Firefox on Linux(Ubuntu), Windows and MacOS.
 * Other Chromium based browsers(Vivaldi, Brave, etc) / other platforms(Raspian, Jetson, etc) may work or may not.
-* For Firefox, only version 113.0.2 works.
+* For Firefox, version 113 and above are required.
 
 ## License
 [GPL3](LICENSE) ©Element Davv
@@ -53,4 +53,4 @@ The default is the highest quality.
 Any questions and/or suggestions are appreciatiated.
 
 ## Donation
-If the extension help you reducing time and efforts, you can buy me a coffee. [![donate](resources/pp-logo.png)](https://paypal.me/timelegend)
+If you would like to support my development, you can donate some coins. [![donate](resources/pp-logo.png)](https://paypal.me/timelegend)
