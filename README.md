@@ -42,8 +42,10 @@ Default is the highest quality.
 <image src="resources/quality.png">
 
 ## Availability 
-* Browsers of Chrome, Edge and Firefox are supported on desktop platforms of Linux(Ubuntu), Windows and MacOS.
-* Other Chromium based browsers(Vivaldi, Brave, etc) / other platforms(Raspian, Jetson, etc) may work or may not.
+* Chromium browsers(Chrome, Edge, Opera, Brave, Vivaldi) and Firefox are supported on Linux(Ubuntu), Windows and MacOS.
+* With Brave, extra works needed:
+ * Enable 'file-system-access-api' from 'brave:flags'
+ * After launching Brave, Disable and Enable the extension once
 * For Firefox, version 113 and later are required.
 
 ## License
