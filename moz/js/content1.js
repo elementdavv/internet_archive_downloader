@@ -421,8 +421,11 @@ export default function(){
         return document.getElementById('iadprogressid');
     }
 
-    console.log('Internet Archive Downloader v0.5.0 in action');
+    // native TransformStream and WritableStream only work in version 113, use ponyfill instead
     StreamSaver.WritableStream = WebStreamPolyfill.WritableStream;
-    StreamSaver.mitm = 'https://elementdavv.github.io/streamsaver.js/mitm.html?version=2.0.0'
+    StreamSaver.mitm = 'https://elementdavv.github.io/streamsaver.js/mitm.html?version=2.0.0';
+
+    // start
+    console.log('Internet Archive Downloader v0.5.1 in action');
     loadScript("/js/stub.js");
 };

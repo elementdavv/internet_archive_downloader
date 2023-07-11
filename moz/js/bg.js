@@ -77,7 +77,7 @@
     // when user confirm in save as dialog
     chrome.downloads.onCreated.addListener(downloadItem => {
         console.log('download created:')
-        console.log(downloadItem );
+        console.log(downloadItem);
         var fileurl = downloadItem.url;
         var found = 0;
 

@@ -101,6 +101,7 @@ const StreamSaver = (() => {
     mc.port1.postMessage(readable, [readable])
     mc.port1.close()
     mc.port2.close()
+    // disable TransformStream, b/c it does't work in firefox version 114+
     // supportsTransferable = true
     // Freeze TransformStream object (can only work with native)
     Object.defineProperty(streamSaver, 'TransformStream', {
@@ -254,6 +255,7 @@ const StreamSaver = (() => {
 
     return (!useBlobFallback && ts && ts.writable) || new streamSaver.WritableStream({
       write (chunk) {
+        // the check always fail, disable it
         // if (!(chunk instanceof Uint8Array)) {
         //   throw new TypeError('Can only write Uint8Arrays')
         // }
