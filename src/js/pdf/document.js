@@ -11,11 +11,13 @@ import PDFPage from './page.js';
 import PDFSecurity from './security.js';
 import VectorMixin from './mixins/vector.js';
 import ImagesMixin from './mixins/images.js';
+import TBuf from '../utils/tbuf.js';
 
 class PDFDocument {
   constructor(writer, options = {}) {
     this.writer = writer;
     this.options = options;
+    this.error = null;
 
     switch (options.pdfVersion) {
       case '1.4':
@@ -138,8 +140,8 @@ class PDFDocument {
   }
 
   _write(data) {
-    this.writer.write(data);
-    this.writer.write('\n');
+    if (!this.error) this.writer.write(TBuf.convert(data)).catch(e=>this.error=e);
+    if (!this.error) this.writer.write(TBuf.convert('\n')).catch(e=>this.error=e);
     return (this._offset += (data.byteLength ? data.byteLength : data.length));
   }
 

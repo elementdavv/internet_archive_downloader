@@ -13,26 +13,56 @@ import ZIPDocument from './zip/document.js';
 export default function(){
     'use strict';
 
+    const version = '0.5.2';                            // extension version
+    const origin = 'https://archive.org';               // internet archive
+    const sw = !window.showSaveFilePicker;              // is use service worker
+    const ff = /Firefox/.test(navigator.userAgent);     // is firefox
+    
+    const buttonstring = `
+<div class='topinblock button quality-btn'>
+    <select id='iadqualityid' class='iadselect'>
+        <option value='1' selected>★★★★</option>
+    </select>
+    <div class='iadlabel'>Quality</div>
+</div>
+<div class='topinblock download-btn'>
+    <button class='button' type='button' onclick=window.postMessage({from:'iad',cmd:'begin',ctrl:event.ctrlKey||event.metaKey},'${origin}')>
+        <div>
+            <span class='iconochive-download'></span>
+            <span class='icon-label' id='iadprogressid'></span>
+        </div>
+    </button>
+</div>
+`;
+
     var br = {};                // book reader
     var status = 0;             // 0:idle, 1:downloading, 2:completed, 3:failed
     var ctrl = false;           // ctrlKey
 
     window.onmessage = evt => {
-        console.log(`message: ${evt.data.from} ${evt.data.cmd}`);
-        const dt = evt.data;
-        if (dt.from != 'iad') return;
-        if (dt.cmd == 'init') {
-            br = JSON.parse(dt.content); 
-            if (br.bookId) init();
-        }
-        else if (dt.cmd == 'begin') {
-            if (status == 0) ctrl = dt.ctrl;
-            begin();
+        if (evt.origin != origin) return;
+        if (evt.data.from != 'iad') return;
+
+        const data = evt.data;
+        console.log(`message: ${data.cmd}`);
+
+        switch(data.cmd) {
+            case 'init':
+                br = JSON.parse(data.br); 
+                init();
+                break;
+            case 'begin':
+                if (status == 0) ctrl = data.ctrl;
+
+                begin();
+                break;
+            default:
+                break;
         }
     };
 
     function loadScript(href) {
-        console.log(`load ${href}`);
+        console.log(`load script: ${href}`);
         var script = document.createElement('script');
         script.type = 'text/javascript';
         script.src = chrome.runtime.getURL(href);
@@ -40,7 +70,7 @@ export default function(){
     }
 
     function loadCss(href) {
-        console.log(`load ${href}`);
+        console.log(`load css: ${href}`);
         var link = document.createElement('link');
         link.rel = 'stylesheet';
         link.href = chrome.runtime.getURL(href);
@@ -48,44 +78,28 @@ export default function(){
     }
 
     function loadButton() {
-        const ab = document.getElementsByClassName('action-buttons-section');
-        if (ab.length == 0) {
-            console.log("warn: no action buttons section");
-            return;
-        }
+        const ab = fromClass('action-buttons-section');
+
+        if (ab.length == 0) return;
+
         console.log('load buttons');
-        loadCss("/css/iad.css");
-        const ab1 = ab[0];
-        const download = chrome.i18n.getMessage('download');
-        const html = " \
-            <div class='topinblock button quality-btn'> \
-                <select id='iadqualityid' class='iadselect'> \
-                    <option value='1' selected>★★★★</option> \
-                </select> \
-                <div class='iadlabel'>Quality</div> \
-            </div> \
-            <div class='topinblock download-btn'> \
-                <button class='button' type='button' onclick=window.postMessage({from:'iad',cmd:'begin',ctrl:event.ctrlKey||event.metaKey},'*')> \
-                    <div> \
-                        <span class='iconochive-download'></span> \
-                        <span class='icon-label' id='iadprogressid'>" + download + "</span> \
-                    </div> \
-                </button> \
-            </div> \
-            ";
-        ab1.insertAdjacentHTML("afterbegin", html);
+        ab[0].insertAdjacentHTML("afterbegin", buttonstring);
     }
 
     function loadQuality() {
-        var s = document.getElementById('iadqualityid');
+        var s = fromId('iadqualityid');
+
         if (!s) return;
+
         console.log('load qualities');
         const factors = br.reductionFactors;
         const star = "★★★★";
         var n = 0;
         var lastscale = 1;
-        factors.forEach((f, i) => {
+
+        factors.forEach(f => {
             const scale = Math.pow(2, Math.floor(Math.log2(Math.max(1, f.reduce))));
+
             if (scale > lastscale) {
                 if (n < 3) {
                     var o = document.createElement('option');
@@ -93,6 +107,7 @@ export default function(){
                     o.innerText = star.substring(++n);
                     s.appendChild(o);
                 }
+
                 lastscale = scale;
             }
         });
@@ -113,226 +128,264 @@ export default function(){
 
     function getMetadata() {
         console.log('get metadata');
-        const title = document.getElementsByClassName('item-title');
+        const title = fromClass('item-title');
+
         if (title.length > 0) {
             info.Title = title[0].innerText;
         }
+
         const meta = new Map();
         meta.set('by', 'Author');
         meta.set('Isbn', 'ISBN')
         meta.set('Language', 'Language')
         meta.set('Publisher', 'Publisher')
-        meta.set('Publication date', 'Date')
+        meta.set('Publication date', 'Publication date')
         meta.set('Contributor', 'Contributor')
-        const metadata = document.getElementsByClassName('metadata-definition');
+        const metadata = fromClass('metadata-definition');
+
         for (var i = 0; i < metadata.length; i++) {
             const metaname = metadata[i].children[0].innerText;
+
             if (meta.has(metaname)) {
                 info[meta.get(metaname)] = metadata[i].children[1].innerText;
             }
         }
+
         info.Producer = 'Element Davv';
+    }
+
+    var progress = null;        // progress bar
+
+    function getProgress() {
+        console.log('get progress');
+        progress = fromId('iadprogressid');
     }
 
     function init(){
         console.log('init begin');
+        loadCss("/css/iad.css");
         loadButton();
         loadQuality();
         getBookInfo();
         getMetadata();
+        getProgress();
+        readynotify();
         console.log('init complete');
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    var browsercancel = false;          // canceled from browser download list
+    if (sw) {
+        var paused = -1;
 
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        console.log(message);
-        if (message.from != 'iad') return;
-        if (message.cmd == 'error') {
-            if (stop) return;
-            stop = true;
-            browsercancel = true;
-            console.log("process error: " + message.error);
-            if (message.error != 'USER_CANCELED') {
-                adderr(message.error);
+        chrome.runtime.onMessage.addListener(message => {
+            if (status != 1 || message.from != 'iad') return;
+
+            console.log(message);
+
+            if (message.cmd == 'pause') {
+                paused = 0;
             }
-        }
-    });
-
-    var stop = false;           // stop indicator
-    var filename = "";          // download filename
+            else if (message.cmd == 'resume') {
+                resumeDownload(paused);
+                paused = -1;
+            }
+            else if (message.cmd == 'cancel') {
+                abort();
+            }
+        });
+    }
 
     async function begin() {
         if (status == 1) {
-            if (stop) {
-                alert(chrome.i18n.getMessage("cleanup"));
+            if (confirm(getMessage("confirmabort"))) {
+                abort();
+                if (sw) {
+                    chrome.runtime.sendMessage({from: 'iad', cmd: 'abort'});
+                }
             }
-            else if (confirm(chrome.i18n.getMessage("confirmstop"))) {
-                stop = true;
-                console.log("the user stoped a process.");
-            }
-            return;
         }
-        if (status == 2 || status == 3) {
+        else if (status == 2 || status == 3) {
             readynotify();
-            return;
         }
+        else {
+            getDownloadInfo();
 
-        getDownloadInfo();
-        const response = await chrome.runtime.sendMessage({
-            from: 'iad',
-            cmd: 'download',
-            fileid: filename
-        });
-        if (response.fileid == filename) {
-            console.log(`download ${filename} of quality ${quality} at ${new Date()}`);
-            await download();
+            if (sw) {
+                await chrome.runtime.sendMessage({
+                    from: 'iad',
+                    cmd: 'new',
+                    fileid: filename
+                });
+
+                paused = -1;
+            }
+
+            console.log(`download ${filename} of scale ${quality} at ${new Date()}`);
+            download();
         }
     };
 
-    var quality = 1;            // scale
+    var filename = "";          // filename to save
+    var quality = 1;            // page scale
 
     function getDownloadInfo() {
         filename = fileid + (ctrl ? '.zip' : '.pdf');
-        quality = document.getElementById('iadqualityid').value;
+        quality = fromId('iadqualityid').value;
     }
-
-    var writer = null;          // file stream writer
-    var doc = null;             // pdf document object
-    var fileset = null;         // downloading file set
-    var pageindex = 0;          // current page number
-    var complete = 0;           // completed count
-    var err = [];               // error messages
-    const FILELIMIT = 5;        // parallel download limit
 
     async function download() {
         console.log(`chunks: ${pagecount}`);
-        writer = null;
-        doc = null;
-        fileset = new Set();
+
+        try {
+            if (sw) {
+                createDocSW();
+            }
+            else {
+                await createDoc();
+            }
+
+            beginDownload();
+        } catch(e) {
+            console.error(e);
+            await abortdoc();
+
+            // user cancel in saveas dialog
+            if (e.name != 'AbortError') {
+                alert(getMessage("alerterror", e.toString()));
+            }
+        };
+    }
+
+    var pageindex = 0;          // current page number
+    var complete = 0;           // complete page count
+    var ac = null;              // AbortController
+    const FILELIMIT = 6;        // parallel download limit
+
+    function beginDownload() {
+        startnotify();
         pageindex = 0;
         complete = 0;
-        err = [];
-        stop = false;
-        browsercancel = false;
-        try {
-            createDoc();
-        } catch(e) {
-            await clean();
-            console.log(e);
-            if (e.code != 20) {
-                alert(chrome.i18n.getMessage("alerterror", e.toString()));
+        ac = new AbortController();
+
+        Array(FILELIMIT).fill().forEach(() => {
+            if (pageindex < pagecount) {
+                dispatch();  
             }
-            return;
-        };
-        startnotify();
-        continueDownload();
+        });
+    }
+
+    function resumeDownload(n) {
+        if (n > 0) {
+            Array(n).fill().forEach(() => {
+                if (pageindex < pagecount) {
+                    dispatch();  
+                }
+            });
+        }
     }
 
     function continueDownload() {
-        while (!stop && pageindex < pagecount && fileset.size < FILELIMIT) {
-            pageindex++;
-            fileset.add(pageindex);
-            console.log(`chunk ${pageindex}`);
-            syncfetch(pageindex);
+        if (++complete >= pagecount) {
+            clear();
+            completenotify();
+        }
+        else {
+            updatenotify();
+
+            if (sw && paused > -1) {
+                paused++;
+            }
+            else {
+                if (pageindex < pagecount) {
+                    dispatch();
+                }
+            }
         }
     }
 
-    async function syncfetch(pageindex) {
-        var uri = data[pageindex - 1].uri;
+    function clear() {
+        ac = null;
+        doc.end();
+    }
+
+    function dispatch() {
+        console.log(`chunk ${pageindex}`);
+        let uri = data[pageindex].uri;
         uri += uri.indexOf("?") > -1 ? "&" : "?";
         uri += "scale=" + quality + "&rotate=0";
-        // const uri = "https://expertphotography.b-cdn.net/wp-content/uploads/2011/06/NYEBrody-Beach-020111-2002.jpg";
+        syncfetch(pageindex, uri);
+        pageindex++;
+    }
+
+    async function syncfetch(pageindex, uri) {
         try {
             const response = await fetch(uri, {
-                "method": "GET",
-                "credentials": "include",
-                "responseType": "arraybuffer",
+                method: "GET",
+                credentials: "include",
+                responseType: "arraybuffer",
+                signal: ac.signal,
             });
+
             if (response.ok) {
                 const buffer = await response.arrayBuffer();
-                console.log(`chunk ${pageindex} ready`);
-                const view = new DataView(buffer);
-                await createPage(view, pageindex);
+
+                if (doc) {
+                    const view = new DataView(buffer);
+                    createPage(view, pageindex);
+                    continueDownload();
+                }
             }
             else {
-                throw new Error(chrome.i18n.getMessage("fetchfail", [pageindex, response.status]));
+                throw new Error(response.statusText);
             }
         }
         catch(e) {
-            fileset.delete(pageindex);
-            stop = true;
-            console.log(e);
-            adderr(e);
-            await giveup();
-        };
-    }
+            console.error(e);
 
-    async function giveup() {
-        if (fileset.size == 0) {
-            if (!browsercancel) {
-                const response = await chrome.runtime.sendMessage({
-                    from: 'iad',
-                    cmd: 'cancel',
-                });
+            // other fetches were aborted by ac signal when an error occured in a fetch
+            if (e.name != 'AbortError') {
+                abort(e.toString());
             }
-            await clean();
-            if (err.length > 0) {
-                alert(chrome.i18n.getMessage("alerterror", err.join('.\n')));
-            }
-            failnotify();
         }
     }
 
-    async function clean() {
+    async function abort(message) {
+        failnotify();
+        abortfetch();
+        await abortdoc();
+
+        if (message) alert(getMessage("alerterror", message));
+    }
+
+    function abortfetch() {
+        ac.abort();
+        ac = null;
+    }
+
+    async function abortdoc() {
         doc = null;
+
         if (writer) {
             await writer.abort();
             writer = null;
         }
+
+        if (filehandle) {
+            await filehandle.remove();
+            filehandle = null;
+        }
     }
 
-    function adderr(e) {
-        var ef = false;
-        const es = e.toString ? e.toString() : e;
-        err.forEach((item, index) => {
-            if (item == es)
-                ef = true;
-        });
-        if (!ef) err.push(es);
-    }
-
-    async function createPage(view, pageindex) {
-        fileset.delete(pageindex);
-        var state = doc.getstate();
-        if (state) {
-            stop = true;
-            if (state.toString) state = state.toString();
-            if (state.indexOf('abort') == -1) {
-                adderr(state);
-            }
-        }
-        if (stop) {
-            await giveup();
-            return;
-        }
+    function createPage(view, pageindex) {
+        console.log(`chunk ${pageindex} ready`);
 
         if (ctrl) {
             createZIPPage(view, pageindex);
         }
         else {
             createPDFPage(view, pageindex);
-        }
-        if (++complete == pagecount) {
-            doc.end();
-            completenotify();
-        }
-        else {
-            updatenotify();
-            continueDownload();
         }
     }
 
@@ -347,85 +400,170 @@ export default function(){
     function createPDFPage(view, pageindex) {
         const width = view.getUint16(JPEG_WIDTH);
         const height = view.getUint16(JPEG_HEIGHT);
+
         doc.addPage({
-            pageindex: pageindex - 1
+            pageindex
             , margin: 0
             , size: [width, height]
         });
+
         doc.image(view, 0, 0);
     }
 
-    function createDoc() {
-        if (doc) return;
+    var filehandle = null;      // filesystemfilehandle
+    var writer = null;          // file stream writer
+    var doc = null;             // pdf document object
+
+    async function createDoc() {
+        if (ctrl) {
+            await createZIPDoc();
+        }
+        else {
+            await createPDFDoc();
+        }
+    }
+
+    function createDocSW() {
         const writable = StreamSaver.createWriteStream(filename);
         // writer.write(uInt8)
         writer = writable.getWriter();
+
         if (ctrl) {
-            createZIPDoc();
+            createZIPDocSW();
         }
         else {
-            createPDFDoc();
+            createPDFDocSW();
         }
     }
 
-    function createZIPDoc() {
+    async function createZIPDoc() {
+        const options = {
+            startIn: 'downloads'
+            , suggestedName: filename
+            , types: [
+                {
+                    description: 'Zip archive'
+                    , accept: {
+                        'application/zip': ['.zip']
+                    }
+                }
+            ]
+        };
+
+        filehandle = await showSaveFilePicker(options);
+        const writable = await filehandle.createWritable();
+        // writer.write(ArrayBuffer/TypedArray/DataView/Blob/String/StringLiteral)
+        writer = await writable.getWriter();
         doc = new ZIPDocument(writer);
     }
 
-    function createPDFDoc() {
+    async function createPDFDoc() {
+        const options = {
+            startIn: 'downloads'
+            , suggestedName: filename
+            , types: [
+                {
+                    description: 'Portable Document Format (PDF)'
+                    , accept: {
+                        'application/pdf': ['.pdf']
+                    }
+                }
+            ]
+        };
+
+        filehandle = await showSaveFilePicker(options);
+        const writable = await filehandle.createWritable();
+        // writer.write(ArrayBuffer/TypedArray/DataView/Blob/String/StringLiteral)
+        writer = await writable.getWriter();
+
         doc = new PDFDocument(writer, {
-            pagecount: pagecount
-            , info: info
+            pagecount
+            , info
+        });
+    }
+
+    function createZIPDocSW() {
+        doc = new ZIPDocument(writer);
+    }
+
+    function createPDFDocSW() {
+        doc = new PDFDocument(writer, {
+            pagecount
+            , info
         });
     }
 
     var t = 0;                 // performance now
 
-    function startnotify() {
+    function teststart() {
         t = performance.now();
-        const p = progress();
-        p.classList.add('iadprogress');
-        p.textContent = chrome.i18n.getMessage("downloading");
-        p.style.width = '0%';
+    }
+
+    function testend() {
+        const ss = (performance.now() - t) / 1000;
+        const m = ~~(ss / 60);
+        const s = ~~(ss % 60);
+        return [m, s];
+    }
+
+    function startnotify() {
+        teststart();
+        progress.classList.add('iadprogress');
+        progress.textContent = getMessage("downloading");
+        progress.style.width = '0%';
         status = 1;
     }
 
     function updatenotify() {
-        progress().style.width = (pageindex / pagecount * 100) + '%';
+        progress.style.width = (pageindex / pagecount * 100) + '%';
     }
 
     function completenotify() {
-        const ss = (performance.now() - t) / 1000;
-        const m = ~~(ss / 60);
-        const s = ~~(ss % 60);
+        const [m, s] = testend();
         console.log(`download completed in ${m}m${s}s`);
-        const p = progress();
-        p.classList.remove('iadprogress');
-        p.textContent = chrome.i18n.getMessage("complete");
+        progress.classList.remove('iadprogress');
+        progress.textContent = getMessage("complete");
         status = 2;
     }
 
     function failnotify() {
-        const p = progress();
-        p.classList.remove('iadprogress');
-        p.textContent = chrome.i18n.getMessage("fail");
+        progress.classList.remove('iadprogress');
+        progress.textContent = getMessage("fail");
         status = 3;
     }
 
     function readynotify() {
-        progress().textContent = chrome.i18n.getMessage("download");
+        progress.textContent = getMessage("download");
         status = 0;
     }
 
-    function progress() {
-        return document.getElementById('iadprogressid');
+    function fromId(id) {
+        return document.getElementById(id);
     }
 
-    // native TransformStream and WritableStream only work in version 113, use ponyfill instead
-    StreamSaver.WritableStream = WebStreamPolyfill.WritableStream;
-    StreamSaver.mitm = 'https://elementdavv.github.io/streamsaver.js/mitm.html?version=2.0.0';
+    function fromClass(cls) {
+        return document.getElementsByClassName(cls);
+    }
+
+    function getMessage(messageName, substitutions) {
+        return chrome.i18n.getMessage(messageName, substitutions);
+    }
+
+    if (sw) {
+        StreamSaver.mitm = 'https://elementdavv.github.io/streamsaver.js/mitm.html?version=2.0.0';
+    }
+
+    // native TransformStream and WritableStream only work in firefox 113, use ponyfill instead
+    if (ff) {
+        StreamSaver.supportsTransferable = false;
+
+        if (WebStreamPolyfill) {
+            StreamSaver.WritableStream = WebStreamPolyfill.WritableStream;
+        }
+    }
 
     // start
-    console.log('Internet Archive Downloader v0.5.1 in action');
+    console.log(`Internet Archive Downloader ${version} in action`);
     loadScript("/js/stub.js");
+
 };

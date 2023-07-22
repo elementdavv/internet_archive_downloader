@@ -17,7 +17,7 @@ class PDFDocument {
   constructor(writer, options = {}) {
     this.writer = writer;
     this.options = options;
-    this.state = '';
+    this.error = null;
 
     switch (options.pdfVersion) {
       case '1.4':
@@ -140,19 +140,9 @@ class PDFDocument {
   }
 
   _write(data) {
-    if (typeof data == 'string' || data instanceof String) {
-        data = new Uint8Array(TBuf.str2Buffer(data));
-    }
-    else {
-        data = new Uint8Array(data.buffer);
-    }
-    this.writer.write(data).catch(e=>this.state=e);
-    this.writer.write(new Uint8Array(TBuf.str2Buffer('\n')));
+    if (!this.error) this.writer.write(TBuf.convert(data)).catch(e=>this.error=e);
+    if (!this.error) this.writer.write(TBuf.convert('\n')).catch(e=>this.error=e);
     return (this._offset += (data.byteLength ? data.byteLength : data.length));
-  }
-
-  getstate() {
-    return this.state;
   }
 
   addContent(data) {

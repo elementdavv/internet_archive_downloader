@@ -165,4 +165,20 @@ const TBuf = {};
         return buf.buffer;
     };
 
+    const textEncoder = new TextEncoder();
+
+    // data to Uint8Array
+    TBuf.convert = (chunk) => {
+        if (Object.prototype.toString.call(chunk) !== '[object Uint8Array]') {
+            if (chunk instanceof String || typeof chunk == 'string') {
+                chunk = textEncoder.encode(chunk);
+            }
+            else {
+                chunk = new Uint8Array(chunk.buffer);
+            }
+        }
+
+        return chunk;
+    }
+
 export default TBuf;

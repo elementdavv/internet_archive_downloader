@@ -5,6 +5,8 @@
  * Distributed under terms of the GPL3 license.
  */
 
+import TBuf from '../utils/tbuf.js';
+
 class ZIPDocument {
     constructor(writer) {
         this.writer = writer;
@@ -12,6 +14,7 @@ class ZIPDocument {
         this.filenames = [];
         this.encoder = new TextEncoder();
         this.offset = 0;
+        this.error = null;
     }
 
     /**
@@ -89,7 +92,7 @@ class ZIPDocument {
     }
 
     write(data) {
-        this.writer.write(data);
+        if (!this.error) this.writer.write(TBuf.convert(data)).catch(e=>this.error=e);
     }
 
     end() {

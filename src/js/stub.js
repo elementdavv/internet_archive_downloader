@@ -18,28 +18,34 @@
     }
 
     const getBookStatus = () => {
+        let r = 2;
+
         if (document.querySelector("meta[property='mediatype']").content != "texts") {
             console.log('media not book, quit');
-            return 1;
+            r = 1;
         }
-        if (!window.br) {
-            console.log('no book info, wait ' + step);
-            return 0;
+        else if (!window.br) {
+            console.log(`no book info, wait ${step}`);
+            r = 0;
         }
-        if (!window.br.protected) {
+        else if (!window.br.protected) {
             console.log('book always available, quit');
-            return 1;
+            r = 1;
         }
-        if (!window.br.options.lendingInfo.loanId) {
+        else if (!window.br.options.lendingInfo.loanId) {
             console.log('book not borrowed yet, quit');
-            return 1;
+            r = 1;
         }
-        console.log('done');
-        return 2;
+        else {
+            console.log('done');
+        }
+
+        return r;
     }
 
     const check = () => {
         const st = getBookStatus();
+
         if (st == 0) {
             if (++step == STEPLIMIT) {
                 console.log('wait timeout, quit');
@@ -50,11 +56,15 @@
         else {
             clearInterval(intervalid);
             intervalid = null;
-            var br = '{}';
-            if (st == 2) { br = getBr(); }
-            window.postMessage({from: 'iad', cmd: 'init', content: br}, '*');
+
+            if (st == 2) {
+                let br = getBr();
+                let origin = 'https://archive.org';
+                window.postMessage({from: 'iad', cmd: 'init', br}, origin);
+            }
         }
     }
 
     var intervalid = setInterval(check, 1000);
+
 })();

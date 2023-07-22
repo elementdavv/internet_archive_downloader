@@ -1,10 +1,9 @@
 {
     "description": { "message": "Download PDF books from archive.org" }
     , "title": { "message": "Internet Archive Downloader" }
-    , "alerterror": { "message": "$1\nPlease contact the developer." }
-    , "confirmstop": { "message": "Would you like to quit immediately?\nIt will need a little while to clean up." }
-    , "cleanup": { "message": "Download failed. Please wait for cleaning up." }
-    , "fetchfail": { "message": "Page $1 status $2" }
+    , "alerterror": { "message": "$1.\nPlease report to https://github.com/elementdavv/internet_archive_downloader/issues" }
+    , "confirmabort": { "message": "To abort ?" }
+    , "unsupported": { "message": "The extension does not work on your browser" }
     , "download": { "message": "Download" }
     , "downloading": { "message": "Downloading" }
     , "complete": { "message": "Completed" }

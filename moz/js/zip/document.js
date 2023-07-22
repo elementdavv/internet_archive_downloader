@@ -5,6 +5,8 @@
  * Distributed under terms of the GPL3 license.
  */
 
+import TBuf from '../utils/tbuf.js';
+
 class ZIPDocument {
     constructor(writer) {
         this.writer = writer;
@@ -12,7 +14,7 @@ class ZIPDocument {
         this.filenames = [];
         this.encoder = new TextEncoder();
         this.offset = 0;
-        this.state = '';
+        this.error = null;
     }
 
     /**
@@ -69,7 +71,7 @@ class ZIPDocument {
         zipObject.crc.append(view)
         zipObject.uncompressedLength += view.byteLength
         zipObject.compressedLength += view.byteLength
-        this.write(new Uint8Array(view.buffer));
+        this.write(view);
     }
 
     writeFooter(zipObject) {
@@ -90,11 +92,7 @@ class ZIPDocument {
     }
 
     write(data) {
-        this.writer.write(data).catch(e=>this.state=e);
-    }
-
-    getstate() {
-        return this.state;
+        if (!this.error) this.writer.write(TBuf.convert(data)).catch(e=>this.error=e);
     }
 
     end() {
