@@ -5,27 +5,29 @@
  * Distributed under terms of the GPL3 license.
  */
 
-import StreamSaver from './utils/streamsaver.js';
+import './utils/streamsaver.js';
 import PDFDocument from './pdf/document.js';
 import ZIPDocument from './zip/document.js';
+import Queue from './utils/queue.js';
 
 export default function(){
     'use strict';
 
-    const version = '0.5.2';                            // extension version
-    const origin = 'https://archive.org';               // internet archive
+    const version = '0.6.0';                            // extension version
+    const origin = location.origin;                     // origin
+    const extid = chrome.runtime.getURL('').match(/[\-0-9a-z]+/g)[1];                 // extension host
     const sw = !window.showSaveFilePicker;              // is use service worker
     const ff = /Firefox/.test(navigator.userAgent);     // is firefox
-    
+
     const buttonstring = `
-<div class='topinblock button quality-btn'>
-    <select id='iadqualityid' class='iadselect'>
+<div class='topinblock button scale-btn'>
+    <select id='iadscaleid' class='iadselect'>
         <option value='1' selected>★★★★</option>
     </select>
     <div class='iadlabel'>Quality</div>
 </div>
 <div class='topinblock download-btn'>
-    <button class='button' type='button' onclick=window.postMessage({from:'iad',cmd:'begin',ctrl:event.ctrlKey||event.metaKey},'${origin}')>
+    <button class='button' type='button' onclick=window.postMessage({extid:'${extid}',cmd:'begin',ctrl:event.ctrlKey||event.metaKey},'${origin}')>
         <div>
             <span class='iconochive-download'></span>
             <span class='icon-label' id='iadprogressid'></span>
@@ -39,8 +41,7 @@ export default function(){
     var ctrl = false;           // ctrlKey
 
     window.onmessage = evt => {
-        if (evt.origin != origin) return;
-        if (evt.data.from != 'iad') return;
+        if (evt.origin != origin || evt.data.extid != extid) return;
 
         const data = evt.data;
         console.log(`message: ${data.cmd}`);
@@ -85,29 +86,29 @@ export default function(){
         ab[0].insertAdjacentHTML("afterbegin", buttonstring);
     }
 
-    function loadQuality() {
-        var s = fromId('iadqualityid');
+    function loadScales() {
+        var s = fromId('iadscaleid');
 
         if (!s) return;
 
-        console.log('load qualities');
+        console.log('load scales');
         const factors = br.reductionFactors;
         const star = "★★★★";
         var n = 0;
         var lastscale = 1;
 
         factors.forEach(f => {
-            const scale = Math.pow(2, Math.floor(Math.log2(Math.max(1, f.reduce))));
+            const scal = Math.pow(2, Math.floor(Math.log2(Math.max(1, f.reduce))));
 
-            if (scale > lastscale) {
+            if (scal > lastscale) {
                 if (n < 3) {
                     var o = document.createElement('option');
-                    o.value = scale;
+                    o.value = scal;
                     o.innerText = star.substring(++n);
                     s.appendChild(o);
                 }
 
-                lastscale = scale;
+                lastscale = scal;
             }
         });
     }
@@ -164,7 +165,7 @@ export default function(){
         console.log('init begin');
         loadCss("/css/iad.css");
         loadButton();
-        loadQuality();
+        loadScales();
         getBookInfo();
         getMetadata();
         getProgress();
@@ -176,33 +177,40 @@ export default function(){
     ////////////////////////////////////////////////////////////////////////////////////////////////////
 
     if (sw) {
-        var paused = -1;
-
-        chrome.runtime.onMessage.addListener(message => {
-            if (status != 1 || message.from != 'iad') return;
+        chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+            if (sender.id != chrome.runtime.id || status != 1) return;
 
             console.log(message);
 
-            if (message.cmd == 'pause') {
-                paused = 0;
+            switch(message.cmd) {
+                case 'pause':
+                    pause();
+                    break;
+                case 'resume':
+                    resume();
+                    break;
+                case 'cancel':
+                    abort();
+                    break;
+                default:
+                    break;
             }
-            else if (message.cmd == 'resume') {
-                resumeDownload(paused);
-                paused = -1;
-            }
-            else if (message.cmd == 'cancel') {
-                abort();
-            }
+
+            sendResponse({});
         });
     }
 
     async function begin() {
         if (status == 1) {
-            if (confirm(getMessage("confirmabort"))) {
-                abort();
-                if (sw) {
-                    chrome.runtime.sendMessage({from: 'iad', cmd: 'abort'});
-                }
+            pause();
+            // before confirm dislog returns, onmessage waits.
+            const cf = confirm(getMessage("confirmabort"));
+
+            if (cf) {
+                abort({sync: sw});
+            }
+            else {
+                resume();
             }
         }
         else if (status == 2 || status == 3) {
@@ -212,31 +220,32 @@ export default function(){
             getDownloadInfo();
 
             if (sw) {
-                await chrome.runtime.sendMessage({
-                    from: 'iad',
-                    cmd: 'new',
-                    fileid: filename
-                });
-
-                paused = -1;
+                console.log('notify browser: new');
+                await chrome.runtime.sendMessage({cmd: 'new', fileid: filename});
             }
 
-            console.log(`download ${filename} of scale ${quality} at ${new Date()}`);
+            console.log(`download ${filename} of scale ${scale} at ${new Date()}`);
             download();
         }
     };
 
-    var filename = "";          // filename to save
-    var quality = 1;            // page scale
+    var filename = "";        // filename to save
+    var scale = 1;            // page scale
 
     function getDownloadInfo() {
         filename = fileid + (ctrl ? '.zip' : '.pdf');
-        quality = fromId('iadqualityid').value;
+        scale = fromId('iadscaleid').value;
     }
 
     async function download() {
-        console.log(`chunks: ${pagecount}`);
+        await getFile();
 
+        if (doc) {
+            getLeafs();
+        }
+    }
+
+    async function getFile() {
         try {
             if (sw) {
                 createDocSW();
@@ -244,62 +253,84 @@ export default function(){
             else {
                 await createDoc();
             }
-
-            beginDownload();
         } catch(e) {
-            console.error(e);
-            await abortdoc();
+            const message = e.toString();
+            console.log(message);
 
-            // user cancel in saveas dialog
+            // user cancel in showSaveFilePicker
+            // with streamSaver, downloading file created automatically
+            //      and if user cancel in saveas dialog, downloads event will catch and send back message
             if (e.name != 'AbortError') {
-                alert(getMessage("alerterror", e.toString()));
+                abortdoc({sync: sw, message});
             }
         };
     }
 
-    var pageindex = 0;          // current page number
+    var jobs= null;             // jobs
+    var jobcount = 0;           // job count
     var complete = 0;           // complete page count
+    var paused = 0;             // paused count
+    var recover = 0;            // recover file
     var ac = null;              // AbortController
     const FILELIMIT = 6;        // parallel download limit
+    const TRYLIMIT = 3;         // each leaf retry limit
 
-    function beginDownload() {
-        startnotify();
-        pageindex = 0;
+    function initleaf() {
+        jobs = new Queue();
+
+        Array(pagecount).fill().forEach((_, i) => {
+            jobs.enque({pageindex: i, tri: 0});
+        });
+
+        jobcount = pagecount;
         complete = 0;
+        paused = 0;
+        recover = 0;
         ac = new AbortController();
+    }
+
+    function getLeafs() {
+        console.log(`chunk number: ${pagecount}`);
+        startnotify();
+        initleaf();
 
         Array(FILELIMIT).fill().forEach(() => {
-            if (pageindex < pagecount) {
-                dispatch();  
-            }
+            dispatch();
         });
     }
 
-    function resumeDownload(n) {
-        if (n > 0) {
-            Array(n).fill().forEach(() => {
-                if (pageindex < pagecount) {
-                    dispatch();  
-                }
-            });
+    function pause() {
+        console.log('paused')
+        paused++;
+    }
+
+    function resume() {
+        console.log('resume');
+
+        if (--paused == 0) {
+            if (recover > 0) {
+                Array(recover).fill().forEach(() => {
+                    dispatch();
+                });
+            }
+
+            recover = 0;
         }
     }
 
-    function continueDownload() {
-        if (++complete >= pagecount) {
+    function nextLeaf() {
+        if (++complete >= jobcount) {
             clear();
             completenotify();
         }
         else {
             updatenotify();
 
-            if (sw && paused > -1) {
-                paused++;
+            if (paused > 0) {
+                recover++;
             }
             else {
-                if (pageindex < pagecount) {
-                    dispatch();
-                }
+                dispatch();
             }
         }
     }
@@ -310,15 +341,21 @@ export default function(){
     }
 
     function dispatch() {
+        if (jobs.isEmpty) return;
+
+        const job = jobs.deque();
+        const pageindex = job.pageindex;
+        const tri = job.tri;
         console.log(`chunk ${pageindex}`);
-        let uri = data[pageindex].uri;
+        var uri = data[pageindex].uri;
         uri += uri.indexOf("?") > -1 ? "&" : "?";
-        uri += "scale=" + quality + "&rotate=0";
-        syncfetch(pageindex, uri);
-        pageindex++;
+        uri += `scale=${scale}&rotate=0`;
+        const width = Math.ceil(data[pageindex].width / scale);
+        const height = Math.ceil(data[pageindex].height / scale);
+        syncfetch(pageindex, tri, uri, width, height);
     }
 
-    async function syncfetch(pageindex, uri) {
+    async function syncfetch(pageindex, tri, uri, width, height) {
         try {
             const response = await fetch(uri, {
                 method: "GET",
@@ -332,8 +369,8 @@ export default function(){
 
                 if (doc) {
                     const view = new DataView(buffer);
-                    createPage(view, pageindex);
-                    continueDownload();
+                    createPage(view, pageindex, width, height);
+                    nextLeaf();
                 }
             }
             else {
@@ -341,29 +378,44 @@ export default function(){
             }
         }
         catch(e) {
-            console.error(e);
+            const message = e.toString();
+            console.log(message);
 
             // other fetches were aborted by ac signal when an error occured in a fetch
             if (e.name != 'AbortError') {
-                abort(e.toString());
+                // network error, retry
+                // chrome: failed to fetch
+                // firefox: networkerror when fetch resource
+                if (message.indexOf('fetch') && ++tri < TRYLIMIT) {
+                    console.log(`trunk ${pageindex} failed, retry ${tri}`)
+                    jobs.enque({pageindex, tri});
+                    jobcount++;
+                    nextLeaf();
+                }
+                else {
+                    abort({sync: sw, message});
+                }
             }
         }
     }
 
-    async function abort(message) {
+    function abort(extra) {
         failnotify();
-        abortfetch();
-        await abortdoc();
-
-        if (message) alert(getMessage("alerterror", message));
+        abortLeaf();
+        abortdoc(extra);
     }
 
-    function abortfetch() {
+    function abortLeaf() {
         ac.abort();
         ac = null;
     }
 
-    async function abortdoc() {
+    async function abortdoc(extra) {
+        if (extra && extra.sync) {
+            console.log('notify browser: abort');
+            await chrome.runtime.sendMessage({cmd: 'abort'});
+        }
+
         doc = null;
 
         if (writer) {
@@ -371,20 +423,24 @@ export default function(){
             writer = null;
         }
 
-        if (filehandle) {
+        if (filehandle && filehandle.remove) {
             await filehandle.remove();
             filehandle = null;
         }
+
+        if (extra && extra.message) {
+            alert(getMessage("alerterror", extra.message));
+        }
     }
 
-    function createPage(view, pageindex) {
+    function createPage(view, pageindex, width, height) {
         console.log(`chunk ${pageindex} ready`);
 
         if (ctrl) {
             createZIPPage(view, pageindex);
         }
         else {
-            createPDFPage(view, pageindex);
+            createPDFPage(view, pageindex, width, height);
         }
     }
 
@@ -393,13 +449,7 @@ export default function(){
         doc.image({view, name});
     }
 
-    const JPEG_WIDTH = 165;
-    const JPEG_HEIGHT = 163;
-
-    function createPDFPage(view, pageindex) {
-        const width = view.getUint16(JPEG_WIDTH);
-        const height = view.getUint16(JPEG_HEIGHT);
-
+    function createPDFPage(view, pageindex, width, height) {
         doc.addPage({
             pageindex
             , margin: 0
@@ -423,7 +473,7 @@ export default function(){
     }
 
     function createDocSW() {
-        const writable = StreamSaver.createWriteStream(filename);
+        const writable = streamSaver.createWriteStream(filename);
         // writer.write(uInt8)
         writer = writable.getWriter();
 
@@ -506,15 +556,17 @@ export default function(){
     }
 
     function startnotify() {
+        console.log('start');
         teststart();
         progress.classList.add('iadprogress');
         progress.textContent = getMessage("downloading");
         progress.style.width = '0%';
+        refreshTip();
         status = 1;
     }
 
     function updatenotify() {
-        progress.style.width = (pageindex / pagecount * 100) + '%';
+        progress.style.width = (complete / jobcount * 100) + '%';
     }
 
     function completenotify() {
@@ -522,18 +574,63 @@ export default function(){
         console.log(`download completed in ${m}m${s}s`);
         progress.classList.remove('iadprogress');
         progress.textContent = getMessage("complete");
+        refreshTip();
         status = 2;
     }
 
     function failnotify() {
+        console.log('failed');
         progress.classList.remove('iadprogress');
         progress.textContent = getMessage("fail");
+        refreshTip();
         status = 3;
     }
 
     function readynotify() {
+        console.log('ready');
         progress.textContent = getMessage("download");
+        refreshTip();
         status = 0;
+    }
+
+    function refreshTip() {
+        setTimeout(() => {
+            try {
+                var top = 0;
+                var left = 0;
+                const beforeWidth = 10;
+                const beforeHeight = 5;
+
+                const scale_btn = fromClass('scale-btn')[0];
+                const sba = window.getComputedStyle(scale_btn, ':after');
+                const sbaw = sba.getPropertyValue('width');
+                const scaleAfterWidth = Number(sbaw.replace('px', ''));
+
+                top = scale_btn.offsetHeight + 3;
+                left = scale_btn.offsetLeft + (scale_btn.offsetWidth - beforeWidth) / 2;
+                scale_btn.style.setProperty('--beforetop', `${top}px`);
+                scale_btn.style.setProperty('--beforeleft', `${left}px`);
+                top += beforeHeight;
+                left = scale_btn.offsetLeft + (scale_btn.offsetWidth - scaleAfterWidth) / 2;
+                scale_btn.style.setProperty('--aftertop', `${top}px`);
+                scale_btn.style.setProperty('--afterleft', `${left}px`);
+
+                const download_btn = fromClass('download-btn')[0].children[0];
+                const dba = window.getComputedStyle(download_btn, ':after');
+                const dbaw = dba.getPropertyValue('width');
+                const downloadAfterWidth = Number(dbaw.replace('px', ''));
+
+                top = download_btn.offsetHeight + 3;
+                left = download_btn.offsetLeft + (download_btn.offsetWidth - beforeWidth) / 2;
+                download_btn.style.setProperty('--beforetop', `${top}px`);
+                download_btn.style.setProperty('--beforeleft', `${left}px`);
+                top += beforeHeight;
+                left = download_btn.offsetLeft + (download_btn.offsetWidth - downloadAfterWidth) / 2;
+                download_btn.style.setProperty('--aftertop', `${top}px`);
+                download_btn.style.setProperty('--afterleft', `${left}px`);
+            }
+            catch(e){}
+        }, 500);
     }
 
     function fromId(id) {
@@ -549,15 +646,15 @@ export default function(){
     }
 
     if (sw) {
-        StreamSaver.mitm = 'https://elementdavv.github.io/streamsaver.js/mitm.html?version=2.0.0';
+        streamSaver.mitm = 'https://elementdavv.github.io/streamsaver.js/mitm.html?version=2.0.0';
     }
 
     // native TransformStream and WritableStream only work in firefox 113, use ponyfill instead
     if (ff) {
-        StreamSaver.supportsTransferable = false;
+        streamSaver.supportsTransferable = false;
 
-        if (WebStreamPolyfill) {
-            StreamSaver.WritableStream = WebStreamPolyfill.WritableStream;
+        if (globalThis.WebStreamsPolyfill) {
+            streamSaver.WritableStream = globalThis.WebStreamsPolyfill.WritableStream;
         }
     }
 

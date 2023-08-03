@@ -5,7 +5,7 @@
  * Distributed under terms of the GPL3 license.
  */
 
-import MD5 from '../crypto/md5.js';
+import { MD5 } from '../crypto/md5.js';
 
 class PDFSecurity {
   static generateFileID(info = {}) {

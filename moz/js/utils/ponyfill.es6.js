@@ -1,11 +1,11 @@
 /**
  * web-streams-polyfill v3.2.1
  */
-'use strict';
-
-const WebStreamsPolyfill = {};
-
-(function (exports) {
+(function (global, factory) {
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+    typeof define === 'function' && define.amd ? define(['exports'], factory) :
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.WebStreamsPolyfill = {}));
+}(this, (function (exports) { 'use strict';
 
     /// <reference lib="es2015.symbol" />
     const SymbolPolyfill = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ?
@@ -4220,7 +4220,5 @@ const WebStreamsPolyfill = {};
 
     Object.defineProperty(exports, '__esModule', { value: true });
 
-})(WebStreamsPolyfill);
-
-export default WebStreamsPolyfill;
+})));
 //# sourceMappingURL=ponyfill.es6.js.map

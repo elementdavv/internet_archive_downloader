@@ -1,11 +1,11 @@
 # Internet Archive Downloader
 
-[Internet Archive](https://archive.org) holds more than 34 millions books for free access. Among them some can only be read online by borrowing for a limit period. This extension can download these books for later reading.
+[Internet Archive](https://archive.org) holds more than 34 millions books for free access. Among that some can only be read online by borrowing for a limit period. This extension can download these books for later reading.
 
 ## Features
 * Download a book as a PDF file
-* Download a book as a collection of JPEG files for each page
-* Optional page quality
+* Download a book as a collection of JPEG files one for each leaf
+* Optional leaf quality
 * Concurrent downloads of multiple books
 
 ## Install
@@ -18,39 +18,38 @@ For Firefox:
 * Drop the package from file manager to Extensions page in your browser.
 * Grant Optional permissions from Permissions tab on the extension page.
 
-Alternatively, install automatically from browser extension repositories(not always up to date):
+Alternatively, install automatically from browser extension repositories:
 
 [Chrome WebStore](https://chrome.google.com/webstore/detail/internet-archive-download/keimonnoakgkpnifppoomfdlkadghkjb) / [Edge Addons](https://microsoftedge.microsoft.com/addons/detail/internet-archive-download/cnpoedgimjaecinmgfnfhfmcpcngeeje) / [Mozilla Addons (Firefox)](https://addons.mozilla.org/en-US/firefox/addon/internet_archive_downloader/)(Optional permissions must be granted as well)
 
 ## Usage
-In [Internet Archive](https://archive.org), all books lies in three types:
+In [Internet Archive](https://archive.org), the availability of books lies in three categories:
 1) Lending Library
 2) Borrow 14 days
 3) Always Available
 
-The extension works with type 1 and 2.
+The extension works with caterogy 1 and 2.
 
-After borrowing a book, two new buttons read "Quality" and "Download" will appear under the book reading window, beside the "Favorite" button. 
+After borrowing a book, two new buttons read "Quality" and "Download" will appear under the book viewer, beside the "Favorite" button. 
 <image src="resources/borrow.png">
 
 * To get current book as PDF file, click the "Download" button.
-* To get each page as original JPEG file, click the "Download" button with Ctrl key pressed(Command key on Mac).
+* To get each leaf as a JPEG file, click the "Download" button with Ctrl key pressed(Command key on Mac).
 
 With the download begins, the button will turn into a progress bar.
 <image src="resources/download.png">
 
-There are variant leaf qualities for each book. The extension keeps that up to four levels. To choose any quality, click the stars on the "Quality" button. The more stars the better quality, the larger file size, and the more time it will take to download.
+Download completed.
+<image src="resources/complete.png">
 
-Default is the best quality.
-<image src="resources/quality.png">
+There are variant leaf qualities for each book. The extension keeps that up to four levels, click the stars on the "Quality" button to choose one. Default is the best quality(the original image, without scaled down).
 
-## Availability 
-* Chromium based browsers, Chrome, Edge, Brave, Vivaldi, Yandex, etc supported
-* Firefox version 113 and later supported
-* With Brave, extra works needed:
-  * Enable 'file-system-access-api' item from 'brave://flags' page
-  * For every launch of Brave, disable and enable the extension once
-* Kiwi on Android not supported
+## Availability
+* Chromium family(Chrome, Edge, Brave, Vivaldi, Opera, Yandex, Kiwi, etc) version 90+ supported
+* Firefox version 113+ supported
+* For Brave to work properly, extra works needed:
+  * Enable 'File System Access API' in 'brave://flags' page
+  * Refresh the extension everytime Brave was launched
 
 ## License
 [GPL3](LICENSE) ©Element Davv

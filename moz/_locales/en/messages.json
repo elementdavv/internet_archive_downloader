@@ -1,13 +1,12 @@
 {
     "description": { "message": "Download PDF books from archive.org" }
     , "title": { "message": "Internet Archive Downloader" }
-    , "alerterror": { "message": "$1.\nPlease report to https://github.com/elementdavv/internet_archive_downloader/issues" }
+    , "alerterror": { "message": "$1.\nPlease contact the developer." }
     , "confirmabort": { "message": "To abort ?" }
-    , "unsupported": { "message": "The extension does not work on your browser" }
     , "download": { "message": "Download" }
     , "downloading": { "message": "Downloading" }
     , "complete": { "message": "Completed" }
     , "fail": { "message": "Failed" }
     , "titledownload": { "message": "Download this item" }
-    , "titlequality": { "message": "Choose page quality" }
+    , "titlescale": { "message": "Choose page quality" }
 }

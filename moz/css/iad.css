@@ -4,8 +4,8 @@
     border: 2px solid #3cb371;
     background-color: #d9e8f4;
 }
-.action-buttons-section .quality-btn:hover,
-.action-buttons-section .quality-btn:focus {
+.action-buttons-section .scale-btn:hover,
+.action-buttons-section .scale-btn:focus {
     color: #bc8f8f !important;
     border: 2px solid #bc8f8f;
     background-color: #d9e8f4;
@@ -24,77 +24,61 @@
 .iadlabel {
     cursor: default;
 }
-.action-buttons-section .download-btn .button:before {
-    content: "";
+
+.action-buttons-section .download-btn .button:before,
+.action-buttons-section .download-btn .button:after,
+.action-buttons-section .scale-btn:before,
+.action-buttons-section .scale-btn:after {
     display: block;
     opacity: 0;
-    transition: opacity 300ms ease-out;
+    pointer-events: none;
     position: absolute;
-    z-index: 9998;
-    top: 57px;
-    left: 148px;
-    width: 0;
-    height: 0;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-bottom: 5px solid rgba(128, 128, 128, 1.0);
-  }
-.action-buttons-section .download-btn .button:after {
-    content: "__MSG_titledownload__";
-    display: block;
-    opacity: 0;
     transition: opacity 300ms ease-out;
-    position: absolute;
-    z-index: 9999;
-    top: 62px;
-    left: 99px;
-    width: 110px;
-    height: 23px;
-    color: #eee;
-    font-size: 11px;
-    line-height: 23px;
-    text-align: center;
-    background: rgba(0, 0, 0, 0.9);
-    border-radius: 4px;
-  }
-.action-buttons-section .download-btn .button:hover:before,
-.action-buttons-section .download-btn .button:hover:after {
-    opacity: 1;
+    /* transform: translate3d(0,-10px,0); */
+    /* transition: all .15s ease-in-out; */
 }
-.action-buttons-section .quality-btn:before {
-    content: "";
-    display: block;
-    opacity: 0;
-    transition: opacity 300ms ease-out;
-    position: absolute;
-    z-index: 9998;
-    top: 57px;
-    left: 69px;
-    width: 0;
-    height: 0;
+.action-buttons-section .download-btn .button:before,
+.action-buttons-section .scale-btn:before{
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
     border-bottom: 5px solid rgba(128, 128, 128, 1.0);
-  }
-.action-buttons-section .quality-btn:after {
-    content: "__MSG_titlequality__";
-    display: block;
-    opacity: 0;
-    transition: opacity 300ms ease-out;
-    position: absolute;
-    z-index: 9999;
-    top: 62px;
-    left: 16px;
-    width: 116px;
-    height: 23px;
-    color: #eee;
-    font-size: 11px;
-    line-height: 23px;
-    text-align: center;
+    content: '';
+    height: 0;
+    width: 0;
+    z-index: 9998;
+}
+.action-buttons-section .download-btn .button:before{
+    top: var(--beforetop, 56px);
+    left: var(--beforeleft, 150.5px);
+}
+.action-buttons-section .scale-btn:before{
+    top: var(--beforetop, 56px);
+    left: var(--beforeleft, 73px);
+}
+.action-buttons-section .download-btn .button:after,
+.action-buttons-section .scale-btn:after{
     background: rgba(0, 0, 0, 0.9);
     border-radius: 4px;
-  }
-.action-buttons-section .quality-btn:hover:before,
-.action-buttons-section .quality-btn:hover:after {
+    color: #eee;
+    font-size: 11px;
+    padding: 3px 7px;
+    white-space: nowrap;
+    z-index: 9999;
+}
+.action-buttons-section .download-btn .button:after{
+    content: "__MSG_titledownload__";
+    top: var(--aftertop, 61px);
+    left: var(--afterleft, 102px);
+}
+.action-buttons-section .scale-btn:after{
+    content: "__MSG_titlescale__";
+    top: var(--aftertop, 61px);
+    left: var(--afterleft, 20px);
+}
+.action-buttons-section .download-btn .button:hover:before,
+.action-buttons-section .download-btn .button:hover:after,
+.action-buttons-section .scale-btn:hover:before,
+.action-buttons-section .scale-btn:hover:after {
     opacity: 1;
+    transform: translate3d(0,0,0);
 }

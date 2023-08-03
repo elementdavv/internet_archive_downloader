@@ -15,11 +15,10 @@
 
     chrome.action.onClicked.addListener(tab => {
         if (!dnr) {
-            alert(chrome.i18n.getMessage('unsupported'));
-            return;
+            console.log('browser unsupported');
         }
-
-        if (tab.url.indexOf(detail) > -1) {
+        // on old kiwi, tabs updated complete event not triggered, to work from here
+        else if (tab.url.indexOf(detail) > -1) {
             injectjs(tab.id);
         }
         else if (tab.url.indexOf(origin) == -1) {
@@ -28,9 +27,7 @@
     });
 
     chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-        if (!dnr) return;
-
-        if (changeInfo.status == 'complete' && tab.url.indexOf(detail) > -1) {
+        if (dnr && changeInfo.status == 'complete' && tab.url.indexOf(detail) > -1) {
             injectjs(tabId);
         }
     });
@@ -47,79 +44,84 @@
 
     // when new/abort download from extension
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        if (message.from != 'iad') return;
+        if (sender.id != chrome.runtime.id) return;
 
-        console.log('iad message received:');
+        console.log('message received:');
         console.log(message);
         
-        // each time when user initiate a download
-        if (message.cmd == 'new') {
-            const fileid = message.fileid;
-            const tabid = sender.tab.id;
-            fileidtab.set(fileid, tabid);
-            console.log('fileid added: ' + fileid);
-            console.log(fileidtab);
-            sendResponse({fileid});
-        }
-        else if (message.cmd == 'abort') {
-            // if user abort in save as dialog before actual download complete
-            // at this moment, the download created event has not triggered
-            // note: before user takes decision in save as dialog, actual download has already begin
-            var found = 0;
-
-            fileidtab.forEach((tabid, fileid, map) => {
-                if (tabid == sender.tab.id) {
-                    found = fileid;
-                }
-            });
-
-            if (found != 0) {
-                fileidtab.delete(found);
-                console.log('fileid removed:' + found);
+        switch(message.cmd) {
+            case 'new':
+                const fileid = message.fileid;
+                const tabid = sender.tab.id;
+                fileidtab.set(fileid, tabid);
+                console.log(`fileid added: ${fileid}`);
                 console.log(fileidtab);
-            }
+                break;
+            case 'abort':
+                // if user abort in save as dialog before actual download complete
+                // at this moment, the download created event has not triggered
+                // note: before user takes decision in save as dialog, actual download has already begin
+                var found = 0;
 
-            // if user interrupt during download
-            found = 0;
+                fileidtab.forEach((tabid, fileid) => {
+                    if (tabid == sender.tab.id) {
+                        found = fileid;
+                    }
+                });
 
-            downloadidtab.forEach((tabid, downloadid, map) => {
-                if (tabid == sender.tab.id) {
-                    found = downloadid;
-                    chrome.downloads.cancel(downloadid);
-                    console.log('download aborted:' + downloadid);
-                    sendResponse({fileid: 0});      // download canceled
+                if (found != 0) {
+                    fileidtab.delete(found);
+                    console.log(`fileid removed: ${found}`);
+                    console.log(fileidtab);
                 }
-            });
 
-            if (found != 0) {
-                downloadidtab.delete(found);
-                console.log('download removed: ' + found);
-                console.log(downloadidtab);
-            }
+                // if user interrupt during download
+                found = 0;
+
+                downloadidtab.forEach((tabid, downloadid) => {
+                    if (tabid == sender.tab.id) {
+                        found = downloadid;
+                        chrome.downloads.cancel(downloadid);
+                        console.log(`download aborted: ${downloadid}`);
+                    }
+                });
+
+                if (found != 0) {
+                    downloadidtab.delete(found);
+                    console.log(`downloadid removed: ${found}`);
+                    console.log(downloadidtab);
+                }
+
+                break;
+            default:
+                break;
         }
+
+        sendResponse({});
     });
 
     // when user confirm in save as dialog
     chrome.downloads.onCreated.addListener(downloadItem => {
         if (fileidtab.size == 0) return;
 
-        console.log('iad download created:')
+        console.log('download created:')
         console.log(downloadItem);
-        var fileurl = downloadItem.url;
+        const downloadid = downloadItem.id;
+        const fileurl = downloadItem.url;
         var found = 0;
 
-        fileidtab.forEach((tabid, fileid, map) => {
+        fileidtab.forEach((tabid, fileid) => {
             if (fileurl.indexOf(fileid) > -1) {
                 found = fileid;
-                downloadidtab.set(downloadItem.id, tabid);
-                console.log('download added: ' + downloadItem.id);
+                downloadidtab.set(downloadid, tabid);
+                console.log(`downloadid added: ${downloadid}`);
                 console.log(downloadidtab);
             }
         });
 
         if (found != 0) {
             fileidtab.delete(found);
-            console.log('fileid removed: ' + found);
+            console.log(`fileid removed: ${found}`);
             console.log(fileidtab);
         }
     });
@@ -128,41 +130,41 @@
     chrome.downloads.onChanged.addListener(downloadDelta => {
         if (!downloadidtab.has(downloadDelta.id)) return;
 
-        console.log('iad download change:')
+        console.log('download change:')
         console.log(downloadDelta);
         const downloadid = downloadDelta.id;
         const tabid = downloadidtab.get(downloadid);
 
-        if (downloadDelta.paused != undefined && downloadDelta.paused.current == true) {
+        if (downloadDelta.paused != undefined
+            && downloadDelta.paused.current == true) {
             chrome.tabs.sendMessage(tabid, {
-                from: 'iad'
-                , cmd:'pause'
+                cmd:'pause'
             });
         }
-        else if (downloadDelta.paused != undefined && downloadDelta.paused.current == false) {
+        else if (downloadDelta.paused != undefined
+            && downloadDelta.paused.current == false) {
             chrome.tabs.sendMessage(tabid, {
-                from: 'iad'
-                , cmd:'resume'
+                cmd:'resume'
             });
         }
         else if (downloadDelta.error != undefined) {
             downloadidtab.delete(downloadid);
+            console.log(`downloadid removed: ${downloadid}`);
+            console.log(downloadidtab);
+
             if (downloadDelta.error.current == 'USER_CANCELED') {
                 chrome.tabs.sendMessage(tabid, {
-                    from: 'iad'
-                    , cmd: 'cancel'
+                    cmd: 'cancel'
                 });
             }
             else {
                 chrome.downloads.cancel(downloadid);
-                console.log('download removed: ' + downloadid);
-                console.log(downloadidtab);
-
             }
         }
-        else if (downloadDelta.state !== undefined && downloadDelta.state.current == 'complete') {
+        else if (downloadDelta.state !== undefined
+            && downloadDelta.state.current == 'complete') {
             downloadidtab.delete(downloadid);
-            console.log('download removed: ' + downloadid);
+            console.log(`downloadid removed: ${downloadid}`);
             console.log(downloadidtab);
         }
     });
@@ -199,8 +201,9 @@
     }
 
     if (chrome.declarativeNetRequest) {
-        chrome.declarativeNetRequest.updateSessionRules(getOption());
-        console.log('cors ok.');
+        chrome.declarativeNetRequest.updateSessionRules(getOption())
+        .then(console.log('cors ok.'))
+        .catch(e=>console.error(e));
     }
 
 })();

@@ -2,7 +2,13 @@
 
 /* global chrome location ReadableStream define MessageChannel TransformStream */
 
-const StreamSaver = (() => {
+;((name, definition) => {
+  typeof module !== 'undefined'
+    ? module.exports = definition()
+    : typeof define === 'function' && typeof define.amd === 'object'
+      ? define(definition)
+      : (globalThis||self)[name] = definition()
+})('streamSaver', () => {
   'use strict'
 
   const global = typeof window === 'object' ? window : this
@@ -310,6 +316,4 @@ const StreamSaver = (() => {
   }
 
   return streamSaver
-})();
-
-export default StreamSaver;
+})

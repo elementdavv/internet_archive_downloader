@@ -171,7 +171,7 @@ const TBuf = {};
     TBuf.convert = (chunk) => {
         if (Object.prototype.toString.call(chunk) !== '[object Uint8Array]') {
             if (chunk instanceof String || typeof chunk == 'string') {
-                chunk = textEncoder.encode(chunk);
+                chunk = textEncoder.encode(chunk + '\n');
             }
             else {
                 chunk = new Uint8Array(chunk.buffer);

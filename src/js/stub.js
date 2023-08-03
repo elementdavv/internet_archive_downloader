@@ -8,6 +8,8 @@
 (() => {
     var step = 0;
     const STEPLIMIT = 8;
+    const origin = location.origin;
+    const extid = document.currentScript.src.match(/[\-0-9a-z]+/g)[1];
 
     const getBr = () => {
         const br = {};
@@ -20,7 +22,10 @@
     const getBookStatus = () => {
         let r = 2;
 
-        if (document.querySelector("meta[property='mediatype']").content != "texts") {
+        // for collection, mediatype not exist
+        const mediatype = document.querySelector("meta[property='mediatype']");
+
+        if (!mediatype || mediatype.content != "texts") {
             console.log('media not book, quit');
             r = 1;
         }
@@ -58,9 +63,7 @@
             intervalid = null;
 
             if (st == 2) {
-                let br = getBr();
-                let origin = 'https://archive.org';
-                window.postMessage({from: 'iad', cmd: 'init', br}, origin);
+                window.postMessage({extid, cmd: 'init', br: getBr()}, origin);
             }
         }
     }
