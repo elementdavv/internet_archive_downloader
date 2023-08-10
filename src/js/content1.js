@@ -13,7 +13,6 @@ import Queue from './utils/queue.js';
 export default function(){
     'use strict';
 
-    const version = '0.6.0';                            // extension version
     const origin = location.origin;                     // origin
     const extid = chrome.runtime.getURL('').match(/[\-0-9a-z]+/g)[1];                 // extension host
     const sw = !window.showSaveFilePicker;              // is use service worker
@@ -183,6 +182,9 @@ export default function(){
             console.log(message);
 
             switch(message.cmd) {
+                case 'create':
+                    created();
+                    break;
                 case 'pause':
                     pause();
                     break;
@@ -218,13 +220,7 @@ export default function(){
         }
         else {
             getDownloadInfo();
-
-            if (sw) {
-                console.log('notify browser: new');
-                await chrome.runtime.sendMessage({cmd: 'new', fileid: filename});
-            }
-
-            console.log(`download ${filename} of scale ${scale} at ${new Date()}`);
+            console.log(`download ${filename} of scale ${scale} at ${new Date().toJSON().slice(0,19)}`);
             download();
         }
     };
@@ -243,11 +239,31 @@ export default function(){
         if (doc) {
             getLeafs();
         }
+
+        if (sw) {
+            waitcreate();
+        }
+    }
+
+    var swto = 0;               // service worker timeout
+
+    function waitcreate() {
+        swto = setTimeout(() => {
+            const message = 'File not created';
+            console.log(message);
+            abort({sync: sw, message});
+        }, 3e3);
+    }
+
+    function created() {
+        clearTimeout(swto);
     }
 
     async function getFile() {
         try {
             if (sw) {
+                console.log('notify browser: new');
+                await chrome.runtime.sendMessage({cmd: 'new', fileid: filename});
                 createDocSW();
             }
             else {
@@ -258,7 +274,7 @@ export default function(){
             console.log(message);
 
             // user cancel in showSaveFilePicker
-            // with streamSaver, downloading file created automatically
+            // for streamSaver, downloading file created automatically
             //      and if user cancel in saveas dialog, downloads event will catch and send back message
             if (e.name != 'AbortError') {
                 abortdoc({sync: sw, message});
@@ -381,12 +397,11 @@ export default function(){
             const message = e.toString();
             console.log(message);
 
-            // other fetches were aborted by ac signal when an error occured in a fetch
-            if (e.name != 'AbortError') {
-                // network error, retry
+            if (!ac.signal.aborted) {
                 // chrome: failed to fetch
                 // firefox: networkerror when fetch resource
-                if (message.indexOf('fetch') && ++tri < TRYLIMIT) {
+                // and unexpected aborted
+                if (/fetch|abort/.test(message) && ++tri < TRYLIMIT) {
                     console.log(`trunk ${pageindex} failed, retry ${tri}`)
                     jobs.enque({pageindex, tri});
                     jobcount++;
@@ -407,28 +422,30 @@ export default function(){
 
     function abortLeaf() {
         ac.abort();
-        ac = null;
     }
 
     async function abortdoc(extra) {
-        if (extra && extra.sync) {
+        if (extra?.sync) {
             console.log('notify browser: abort');
             await chrome.runtime.sendMessage({cmd: 'abort'});
         }
 
         doc = null;
 
-        if (writer) {
-            await writer.abort();
-            writer = null;
+        if (writer?.abort) {
+            writer.abort().catch(e => {
+                console.log(`${e} when abort writer.`);
+            }).finally(writer = null);
         }
 
-        if (filehandle && filehandle.remove) {
-            await filehandle.remove();
-            filehandle = null;
+        if (filehandle?.remove) {
+            // Brave may throw error
+            filehandle.remove().catch(e => {
+                console.log(`${e} when remove filehandle.`);
+            }).finally(filehandle = null);
         }
 
-        if (extra && extra.message) {
+        if (extra?.message) {
             alert(getMessage("alerterror", extra.message));
         }
     }
@@ -542,6 +559,9 @@ export default function(){
         });
     }
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+
     var t = 0;                 // performance now
 
     function teststart() {
@@ -649,17 +669,25 @@ export default function(){
         streamSaver.mitm = 'https://elementdavv.github.io/streamsaver.js/mitm.html?version=2.0.0';
     }
 
-    // native TransformStream and WritableStream only work in firefox 113, use ponyfill instead
     if (ff) {
+        // native TransformStream and WritableStream only work in firefox 113, use ponyfill instead
         streamSaver.supportsTransferable = false;
 
         if (globalThis.WebStreamsPolyfill) {
             streamSaver.WritableStream = globalThis.WebStreamsPolyfill.WritableStream;
         }
+
+        // keep bg alive
+        setInterval(() => {
+            if (chrome.runtime?.id) {
+                chrome.runtime.sendMessage({cmd: 'keepalive'});
+            }
+        }, 25e3);
     }
 
     // start
-    console.log(`Internet Archive Downloader ${version} in action`);
+    const manifest = chrome.runtime.getManifest();
+    console.log(`${manifest.name} ${manifest.version} in action`);
     loadScript("/js/stub.js");
 
 };

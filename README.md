@@ -6,7 +6,7 @@
 * Download a book as a PDF file
 * Download a book as a collection of JPEG files one for each leaf
 * Optional leaf quality
-* Concurrent downloads of multiple books
+* Download multiple books in parallel
 
 ## Install
 For Chrome, Edge, etc:
@@ -36,20 +36,18 @@ After borrowing a book, two new buttons read "Quality" and "Download" will appea
 * To get current book as PDF file, click the "Download" button.
 * To get each leaf as a JPEG file, click the "Download" button with Ctrl key pressed(Command key on Mac).
 
-With the download begins, the button will turn into a progress bar.
+With download begins, the button will turn into a progress bar.
 <image src="resources/download.png">
 
-Download completed.
+When download completes.
 <image src="resources/complete.png">
 
-There are variant leaf qualities for each book. The extension keeps that up to four levels, click the stars on the "Quality" button to choose one. Default is the best quality(the original image, without scaled down).
+There are variant leaf qualities for each book which the extension keeps up to four levels. Click the stars on the "Quality" button to choose one. Default is the best quality(the original image, without scaled down).
 
 ## Availability
 * Chromium family(Chrome, Edge, Brave, Vivaldi, Opera, Yandex, Kiwi, etc) version 90+ supported
 * Firefox version 113+ supported
-* For Brave to work properly, extra works needed:
-  * Enable 'File System Access API' in 'brave://flags' page
-  * Refresh the extension everytime Brave was launched
+* For Brave to work properly, item 'File System Access API' in 'brave://flags' page should be enabled.
 
 ## License
 [GPL3](LICENSE) ©Element Davv

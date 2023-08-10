@@ -11,7 +11,7 @@
     const host = 'archive.org';
     const origin = 'https://archive.org';
     const detail = 'https://archive.org/details';
-    var dnr = !!chrome.declarativeNetRequest;
+    var dnr = false;
 
     chrome.action.onClicked.addListener(tab => {
         if (!dnr) {
@@ -116,6 +116,10 @@
                 downloadidtab.set(downloadid, tabid);
                 console.log(`downloadid added: ${downloadid}`);
                 console.log(downloadidtab);
+
+                chrome.tabs.sendMessage(tabid, {
+                    cmd:'create'
+                });
             }
         });
 
@@ -202,8 +206,15 @@
 
     if (chrome.declarativeNetRequest) {
         chrome.declarativeNetRequest.updateSessionRules(getOption())
-        .then(console.log('cors ok.'))
+        .then(()=>dnr=true)
         .catch(e=>console.error(e));
     }
+
+    // for Brave
+    setTimeout(() => {
+        if (!dnr) {
+            chrome.runtime.reload();
+        }
+    }, 2e3);
 
 })();
