@@ -47,7 +47,8 @@ There are variant leaf qualities for each book which the extension keeps up to f
 ## Availability
 * Chromium family(Chrome, Edge, Brave, Vivaldi, Opera, Yandex, Kiwi, etc) version 90+ supported
 * Firefox version 113+ supported
-* For Brave to work properly, item 'File System Access API' in 'brave://flags' page should be enabled.
+* For Brave, item 'File System Access API' in 'brave://flags' page should be enabled.
+* For Firefox, item 'Always ask you where to save files' in 'about:preferences' should be unchecked.
 
 ## License
 [GPL3](LICENSE) ©Element Davv
