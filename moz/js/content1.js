@@ -14,10 +14,10 @@ import Queue from './utils/queue.js';
 export default function(){
     'use strict';
 
-    const origin = location.origin;                     // origin
-    const extid = chrome.runtime.getURL('').match(/[\-0-9a-z]+/g)[1];                 // extension host
-    const sw = !window.showSaveFilePicker;              // is use service worker
-    const ff = /Firefox/.test(navigator.userAgent);     // is firefox
+    const origin = location.origin;                                     // origin
+    const extid = chrome.runtime.getURL('').match(/[\-0-9a-z]+/g)[1];   // extension host
+    const sw = !window.showSaveFilePicker;                              // is use service worker
+    const ff = /Firefox/.test(navigator.userAgent);                     // is firefox
 
     const buttonstring = `
 <div class='topinblock button scale-btn'>
@@ -176,9 +176,11 @@ export default function(){
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    var swaitcreate = false;    // wait for sw file created
+
     if (sw) {
         chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-            if (sender.id != chrome.runtime.id || status != 1) return;
+            if (sender.id != chrome.runtime.id || (status != 1 && swaitcreate == false)) return;
 
             console.log(message);
 
@@ -203,7 +205,7 @@ export default function(){
         });
     }
 
-    async function begin() {
+    function begin() {
         if (status == 1) {
             pause();
             // before confirm dislog returns, onmessage waits.
@@ -220,44 +222,84 @@ export default function(){
             readynotify();
         }
         else {
+            clearwaitswfile();
             getDownloadInfo();
-            console.log(`download ${filename} of scale ${scale} at ${new Date().toJSON().slice(0,19)}`);
+            console.log(`download ${filename} at ${new Date().toJSON().slice(0,19)}`);
             download();
         }
     };
 
-    var filename = "";        // filename to save
-    var scale = 1;            // page scale
+    var filename = "";          // filename to save
+    var scale = 1;              // page scale
 
     function getDownloadInfo() {
-        filename = fileid + (ctrl ? '.zip' : '.pdf');
         scale = fromId('iadscaleid').value;
+        filename = fileid + '_' + scale + (ctrl ? '.zip' : '.pdf');
     }
 
     async function download() {
         await getFile();
 
         if (doc) {
-            getLeafs();
-        }
-
-        if (sw) {
-            waitcreate();
+            if (sw) {
+                waitswfile();
+                waitsw();
+            }
+            else {
+                getLeafs();
+            }
         }
     }
 
-    var swto = 0;               // service worker timeout
+    // wait for file create event
+    function waitswfile() {
+        swaitcreate = true;
+    }
 
-    function waitcreate() {
-        swto = setTimeout(() => {
-            const message = 'File not created';
+    // before begin, clear unclean state
+    function clearwaitswfile() {
+        if (swaitcreate) {
+            swaitcreate = false;
+            const message = 'clear last waitswfile';
             console.log(message);
-            abort({sync: sw, message});
+            abortdoc({sync: sw});
+        }
+    }
+
+    var swto = null;            // service worker ready timeout
+
+    // wait and test if service worker is available
+    function waitsw() {
+        swto = setTimeout(() => {
+            swto = null;
+
+            if (streamSaver.swready) {
+                const message = 'sw ready';
+                console.log(message);
+            }
+            else {
+                swaitcreate = false;
+                const message = 'File download was blocked';
+                console.log(message);
+                abortdoc({sync: sw, message});
+            }
         }, 3e3);
     }
 
+    function clearwaitsw() {
+        if (swto) {
+            clearTimeout(swto);
+            swto = null;
+        }
+    }
+
+    // file created, continuing download
     function created() {
-        clearTimeout(swto);
+        if (swaitcreate) {
+            swaitcreate = false;
+            clearwaitsw();
+            getLeafs();
+        }
     }
 
     async function getFile() {
@@ -265,6 +307,7 @@ export default function(){
             if (sw) {
                 console.log('notify browser: new');
                 await chrome.runtime.sendMessage({cmd: 'new', fileid: filename});
+                streamSaver.swready = false;
                 createDocSW();
             }
             else {
@@ -275,8 +318,7 @@ export default function(){
             console.log(message);
 
             // user cancel in showSaveFilePicker
-            // for streamSaver, downloading file created automatically
-            //      and if user cancel in saveas dialog, downloads event will catch and send back message
+            // streamSaver will always create temporary file
             if (e.name != 'AbortError') {
                 abortdoc({sync: sw, message});
             }
@@ -339,6 +381,7 @@ export default function(){
         if (++complete >= jobcount) {
             clear();
             completenotify();
+            returnBook();
         }
         else {
             updatenotify();
@@ -391,7 +434,7 @@ export default function(){
                 }
             }
             else {
-                throw new Error(response.statusText);
+                throw new Error(response.status);
             }
         }
         catch(e) {
@@ -435,14 +478,14 @@ export default function(){
 
         if (writer?.abort) {
             writer.abort().catch(e => {
-                console.log(`${e} when abort writer.`);
+                console.log(`${e} when abort writer`);
             }).finally(writer = null);
         }
 
         if (filehandle?.remove) {
             // Brave may throw error
             filehandle.remove().catch(e => {
-                console.log(`${e} when remove filehandle.`);
+                console.log(`${e} when remove filehandle`);
             }).finally(filehandle = null);
         }
 
@@ -560,10 +603,32 @@ export default function(){
         });
     }
 
+    function returnBook() {
+        console.log('return the book.');
+        const uri = 'https://archive.org/services/loans/loan';
+        const formdata = new FormData();
+        formdata.set('action', 'return_loan');
+        formdata.set('identifier', fileid);
+
+        fetch(uri, {
+            method: "POST",
+            credentials: "include",
+            body: formdata,
+        }).then(response => {
+            if (response.ok) {
+                console.log('reload page.');
+                location.reload();
+            }
+            else {
+                throw new Error(response.status);
+            }
+        }).catch(e=>console.log(e));
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    var t = 0;                 // performance now
+    var t = 0;                  // performance now
 
     function teststart() {
         t = performance.now();

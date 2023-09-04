@@ -29,6 +29,7 @@
     createWriteStream,
     WritableStream: global.WritableStream || ponyfill.WritableStream,
     supportsTransferable: false,
+    swready: false,
     supported: true,
     version: { full: '2.0.5', major: 2, minor: 0, dot: 5 },
     mitm: 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=2.0.0'
@@ -238,6 +239,7 @@
 
             // We never remove this iframes b/c it can interrupt saving
             makeIframe(evt.data.download)
+            streamSaver.swready = true;
           }
         } else if (evt.data.abort) {
           chunks = []

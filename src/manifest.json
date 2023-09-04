@@ -4,7 +4,7 @@
     , "description": "__MSG_description__"
     , "homepage_url": "https://github.com/elementdavv/internet_archive_downloader"
     , "name": "Internet Archive Downloader"
-    , "version": "0.6.1"
+    , "version": "0.6.2"
     , "default_locale": "en"
     , "icons": {
         "128": "images/logo128.png"

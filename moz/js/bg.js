@@ -58,11 +58,9 @@
                 console.log(fileidtab);
                 break;
             case 'abort':
-                // if user abort in save as dialog before actual download complete
-                // at this moment, the download created event has not triggered
-                // note: before user takes decision in save as dialog, actual download has already begin
                 var found = 0;
 
+                // if download hasn't begin
                 fileidtab.forEach((tabid, fileid) => {
                     if (tabid == sender.tab.id) {
                         found = fileid;
