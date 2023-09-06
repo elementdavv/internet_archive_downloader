@@ -15,6 +15,13 @@ class ZIPDocument {
         this.encoder = new TextEncoder();
         this.offset = 0;
         this.error = null;
+
+        // use to trigger download event in streamsaver
+        var code = getDataHelper(8);
+        code.view.setUint32(0, 0x504b0304);
+        code.view.setUint32(4, 0x14000808);
+        this.write(code.array);
+        this.first = true;
     }
 
     /**
@@ -62,7 +69,13 @@ class ZIPDocument {
         data.array.set(header.array, 4);
         data.array.set(zipObject.nameBuf, 30);
         this.offset += data.array.length;
-        this.write(data.array);
+        if (this.first) {
+            this.first = false;
+            this.write(new Uint8Array(data.array.buffer, 8));
+        }
+        else {
+            this.write(data.array);
+        }
     }
 
     writerImage(zipObject, view) {
@@ -124,7 +137,7 @@ class ZIPDocument {
         data.view.setUint32(index + 12, length, true);
         data.view.setUint32(index + 16, this.offset, true);
         this.write(data.array)
-        this.writer.close();
+        // this.writer.close();
     }
 
     toString() {

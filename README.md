@@ -40,9 +40,11 @@ After borrowing a book, two new buttons read "Quality" and "Download" will appea
 With download begins, the button will turn into a progress bar.
 <image src="resources/download.png">
 
+There are variant leaf qualities for each book which the extension keeps up to four levels. Click the stars on the "Quality" button to choose one. Default is the best quality(the original image, without scaled down).
+
 When download completes, the book will be returned automatically to make it available to other users.
 
-There are variant leaf qualities for each book which the extension keeps up to four levels. Click the stars on the "Quality" button to choose one. Default is the best quality(the original image, without scaled down).
+In [Internet Archive](https://archive.org), if a book has 14 days loan period, only one user can borrow it for 14 days, others must wait. And multiple users can borrow it for 1 hour in the meantime. If a book has only 1 hour loan period, only one user can borrow it, others must wait.
 
 ## Availability
 * Chromium family(Chrome, Edge, Brave, Vivaldi, Opera, Yandex, Kiwi, etc) version 90+ supported

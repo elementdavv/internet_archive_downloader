@@ -211,8 +211,7 @@ class PDFDocument {
     this._write(`${xRefOffset}`);
     this._write('%%EOF');
 
-    // end the stream
-    this.writer.close();
+    // this.writer.close();
     return false;
   }
 

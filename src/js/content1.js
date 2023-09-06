@@ -204,7 +204,7 @@ export default function(){
         });
     }
 
-    function begin() {
+    async function begin() {
         if (status == 1) {
             pause();
             // before confirm dislog returns, onmessage waits.
@@ -221,7 +221,7 @@ export default function(){
             readynotify();
         }
         else {
-            clearwaitswfile();
+            await clearwaitswfile();
             getDownloadInfo();
             console.log(`download ${filename} at ${new Date().toJSON().slice(0,19)}`);
             download();
@@ -242,7 +242,14 @@ export default function(){
         if (doc) {
             if (sw) {
                 waitswfile();
-                waitsw();
+
+                if (streamSaver.swready) {
+                    const message = 'sw ready';
+                    console.log(message);
+                }
+                else {
+                    waitsw();
+                }
             }
             else {
                 getLeafs();
@@ -256,12 +263,12 @@ export default function(){
     }
 
     // before begin, clear unclean state
-    function clearwaitswfile() {
+    async function clearwaitswfile() {
         if (swaitcreate) {
             swaitcreate = false;
             const message = 'clear last waitswfile';
             console.log(message);
-            abortdoc({sync: sw});
+            await abortdoc({sync: sw});
         }
     }
 
@@ -306,7 +313,6 @@ export default function(){
             if (sw) {
                 console.log('notify browser: new');
                 await chrome.runtime.sendMessage({cmd: 'new', fileid: filename});
-                streamSaver.swready = false;
                 createDocSW();
             }
             else {
@@ -376,9 +382,9 @@ export default function(){
         }
     }
 
-    function nextLeaf() {
+    async function nextLeaf() {
         if (++complete >= jobcount) {
-            clear();
+            await clear();
             completenotify();
             returnBook();
         }
@@ -394,9 +400,11 @@ export default function(){
         }
     }
 
-    function clear() {
+    async function clear() {
         ac = null;
         doc.end();
+        await writer.ready;
+        await writer.close();
     }
 
     function dispatch() {
@@ -457,10 +465,10 @@ export default function(){
         }
     }
 
-    function abort(extra) {
+    async function abort(extra) {
         failnotify();
         abortLeaf();
-        abortdoc(extra);
+        await abortdoc(extra);
     }
 
     function abortLeaf() {
@@ -476,14 +484,14 @@ export default function(){
         doc = null;
 
         if (writer?.abort) {
-            writer.abort().catch(e => {
+            await writer.abort().catch(e => {
                 console.log(`${e} when abort writer`);
             }).finally(writer = null);
         }
 
         if (filehandle?.remove) {
             // Brave may throw error
-            filehandle.remove().catch(e => {
+            await filehandle.remove().catch(e => {
                 console.log(`${e} when remove filehandle`);
             }).finally(filehandle = null);
         }
@@ -741,13 +749,6 @@ export default function(){
         if (globalThis.WebStreamsPolyfill) {
             streamSaver.WritableStream = globalThis.WebStreamsPolyfill.WritableStream;
         }
-
-        // keep bg alive
-        setInterval(() => {
-            if (chrome.runtime?.id) {
-                chrome.runtime.sendMessage({cmd: 'keepalive'});
-            }
-        }, 25e3);
     }
 
     // start
