@@ -42,7 +42,7 @@ With download begins, the button will turn into a progress bar.
 
 There are variant leaf qualities for each book which the extension keeps up to four levels. Click the stars on the "Quality" button to choose one. Default is the best quality(the original image, without scaled down).
 
-When download completes, the book will be returned automatically to make it available to other users. In [Internet Archive](https://archive.org), if a book has only 1 hour loan period, only one user can borrow it, others have to wait.
+When download completes, the book will be returned automatically to make it available to other users. In [Internet Archive](https://archive.org), books are always allowed to loan to limited users, others have to wait.
 
 ## Availability
 * Chromium family(Chrome, Edge, Brave, Vivaldi, Opera, Yandex, Kiwi, etc) version 90+ supported
