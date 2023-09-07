@@ -46,7 +46,7 @@ When download completes, the book will be returned automatically to make it avai
 
 ## Availability
 * Chromium family(Chrome, Edge, Brave, Vivaldi, Opera, Yandex, Kiwi, etc) version 90+ supported
-* Firefox version 113+ supported
+* Firefox version 115+ supported
 * For Brave, item 'File System Access API' in 'brave://flags' page should be enabled.
 
 ## License
