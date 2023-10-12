@@ -54,5 +54,8 @@ When download completes, the book will be returned automatically to make it avai
 
 Any questions and/or suggestions are appreciatiated.
 
-## Donation
-If you would like to support my development, you can donate some coins. [![donate](resources/pp-logo.png)](https://paypal.me/timelegend)
+## Supporters
+Shine Ed <zero.minute@gmail.com>
+Guevara Ernesto <ernieguevara@yahoo.com>
+
+If you found the extension helpful consider supporting me with a coffee. [![donate](resources/pp-logo.png)](https://paypal.me/timelegend)
