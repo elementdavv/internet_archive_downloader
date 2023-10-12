@@ -55,7 +55,7 @@ When download completes, the book will be returned automatically to make it avai
 Any questions and/or suggestions are appreciatiated.
 
 ## Supporters
-Shine Ed <zero.minute@gmail.com>
-Guevara Ernesto <ernieguevara@yahoo.com>
+- [Shine Ed](mailto:zero.minute@gmail.com)
+- [Guevara Ernesto](mailto:ernieguevara@yahoo.com)
 
 If you found the extension helpful consider supporting me with a coffee. [![donate](resources/pp-logo.png)](https://paypal.me/timelegend)
