@@ -55,7 +55,7 @@ When download completes, the book will be returned automatically to make it avai
 Any questions and/or suggestions are appreciatiated.
 
 ## Supporters
-- [Konior Cody](cody@codykonior.com)
+- [Konior Cody](mailto:cody@codykonior.com)
 - [Shine Ed](mailto:zero.minute@gmail.com)
 - [Guevara Ernesto](mailto:ernieguevara@yahoo.com)
 
