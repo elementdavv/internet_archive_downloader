@@ -59,4 +59,4 @@ Any questions and/or suggestions are appreciatiated.
 - [Shine Ed](mailto:zero.minute@gmail.com)
 - [Guevara Ernesto](mailto:ernieguevara@yahoo.com)
 
-If you found the extension helpful consider supporting me with a coffee. [![donate](resources/pp-logo.png)](https://paypal.me/timelegend)
+If you found the extension helpful consider supporting me with a coffee. <a href='https://www.buymeacoffee.com/timelegend'><img src='resources/bmc-orange.png' style='width:100px;height:28px'></a>
