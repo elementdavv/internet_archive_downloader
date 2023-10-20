@@ -54,9 +54,5 @@ When download completes, the book will be returned automatically to make it avai
 
 Any questions and/or suggestions are appreciatiated.
 
-## Supporters
-- [Konior Cody](mailto:cody@codykonior.com)
-- [Shine Ed](mailto:zero.minute@gmail.com)
-- [Guevara Ernesto](mailto:ernieguevara@yahoo.com)
-
+## Donation
 If you found the extension helpful consider supporting me with a coffee. <a href='https://www.buymeacoffee.com/timelegend' target='_blank'><img src='resources/bmc-orange.png' style='width:100px;height:28px'></a>
