@@ -451,8 +451,9 @@ export default function(){
             if (!ac.signal.aborted) {
                 // chrome: failed to fetch
                 // firefox: networkerror when fetch resource
-                // and unexpected aborted
-                if (/fetch|abort/.test(message) && ++tri < TRYLIMIT) {
+                // unexpected aborted
+                // gateway bad/timeout
+                if (/fetch|abort|502|504/.test(message) && ++tri < TRYLIMIT) {
                     console.log(`trunk ${pageindex} failed, retry ${tri}`)
                     jobs.enque({pageindex, tri});
                     jobcount++;

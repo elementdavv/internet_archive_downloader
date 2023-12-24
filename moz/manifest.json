@@ -9,7 +9,7 @@
     , "browser_specific_settings": {
         "gecko": {
             "id": "internet_archive_downloader@timelegend.net"
-            , "strict_min_version": "113.0"
+            , "strict_min_version": "115.0"
         }
     }
     , "icons": {
