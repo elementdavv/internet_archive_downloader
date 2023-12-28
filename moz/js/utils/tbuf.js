@@ -103,7 +103,7 @@ const TBuf = {};
         let result = new Uint8Array(totalLength);
         let offset = 0;
         for (let arr of arrays) {
-            result.set(new Uint8Array(arr.buffer), offset);
+            result.set(new Uint8Array(arr.buffer, 0, arr.byteLength), offset);
             offset += arr.byteLength;
         }
         return new DataView(result.buffer);

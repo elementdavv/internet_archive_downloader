@@ -24,7 +24,7 @@ class PDFReference extends PDFAbstractReference {
   write(chunk) {
     if (ArrayBuffer.isView(chunk)) {
       if (!(chunk instanceof DataView)) {
-        chunk = new DataView(chunk.buffer);
+        chunk = new DataView(chunk.buffer, 0, chunk.byteLength);
       }
     }
     else if (typeof chunk == 'string') {

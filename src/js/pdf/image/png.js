@@ -130,7 +130,8 @@ class PNGImage {
   }
 
   splitAlphaChannel() {
-    return this.image.decodePixels(pixels => {
+    const pixels = this.image.decodePixels();
+    // return this.image.decodePixels(pixels => {
       let a, p;
       const colorCount = this.image.colors;
       const pixelCount = this.width * this.height;
@@ -152,15 +153,16 @@ class PNGImage {
         i += skipByteCount;
       }
 
-      this.imgData = zlib.deflate(imgData);
-      this.alphaChannel = zlib.deflate(alphaChannel);
+      this.imgData = zlib.deflate.compress(imgData);
+      this.alphaChannel = zlib.deflate.compress(alphaChannel);
       return this.finalize();
-    });
+    // });
   }
 
   loadIndexedAlphaChannel() {
     const transparency = this.image.transparency.indexed;
-    return this.image.decodePixels(pixels => {
+    const pixels = this.image.decodePixels();
+    // return this.image.decodePixels(pixels => {
       // const alphaChannel = Buffer.alloc(this.width * this.height);
       const alphaChannel = new Uint8Array(this.width * this.height);
 
@@ -169,16 +171,17 @@ class PNGImage {
         alphaChannel[i++] = transparency[pixels[j]];
       }
 
-      this.alphaChannel = zlib.deflate(alphaChannel);
+      this.alphaChannel = zlib.deflate.compress(alphaChannel);
       return this.finalize();
-    });
+    // });
   }
 
   decodeData() {
-    this.image.decodePixels(pixels => {
-      this.imgData = zlib.deflate(pixels);
+    const pixels = this.image.decodePixels();
+    // this.image.decodePixels(pixels => {
+      this.imgData = zlib.deflate.compress(pixels);
       this.finalize();
-    });
+    // });
   }
 }
 
