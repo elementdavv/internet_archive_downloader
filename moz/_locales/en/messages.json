@@ -2,9 +2,11 @@
     "description": { "message": "Download PDF books from archive.org" }
     , "title": { "message": "Internet Archive Downloader" }
     , "alerterror": { "message": "$1.\nPlease contact the developer." }
-    , "confirmabort": { "message": "To abort ?" }
+    , "confirmabort": { "message": "To abort?" }
+    , "confirmwait": { "message": "It is coffee time. Take a break, or to abort?" }
     , "download": { "message": "Download" }
     , "downloading": { "message": "Downloading" }
+    , "wait": { "message": "Waiting..." }
     , "complete": { "message": "Completed" }
     , "fail": { "message": "Failed" }
     , "titledownload": { "message": "Download this item" }

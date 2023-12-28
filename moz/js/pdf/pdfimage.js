@@ -6,6 +6,7 @@
  */
 
 import JPEG from './image/jpeg.js';
+import PNGImage from "./image/png.js";
 
 class PDFImage {
   static open(src, label) {
@@ -25,6 +26,8 @@ class PDFImage {
 
     if (data.getUint16(0) === 0xffd8) {
       return new JPEG(data, label);
+    } else if (data.getUint16(0) === 0x8950 && data.getUint16(2) === 0x4e47) {
+      return new PNGImage(data, label);
     } else {
       throw new Error('Unknown image format');
     }

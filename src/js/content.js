@@ -6,10 +6,15 @@
  */
 
 (async () => {
+    if (window.content1iadinit === true) {
+        return;
+    }
+
     if (typeof window.content1iad === 'undefined' ) {
         const src = chrome.runtime.getURL('js/content1.js');
         window.content1iad = await import(src);
-        window.content1iad.default();
     }
+
+    window.content1iad.default();
 
 })();

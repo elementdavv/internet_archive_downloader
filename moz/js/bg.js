@@ -11,14 +11,21 @@
     chrome.action.onClicked.addListener(async tab => {
         const origin = 'https://archive.org';
         const detail = 'https://archive.org/details';
+        const detail2 = 'https://babel.hathitrust.org/cgi/pt';
+        const js = 'js/content.js';
+        const js2 = 'js/hathitrust.js';
         const dnr = await loadDnr();
 
-        if (dnr == 0) {
-            console.log('browser unsupported');
+        if (tab.url.indexOf(detail2) > -1) {
+            injectjs(tab.id, js2);
+        }
+        else if (dnr == 0) {
+            console.log('Internet Archive unsupported');
         }
         // on old kiwi, tabs update complete event not triggered, to work from here
+        // or in case of slow network, buttons not shown
         else if (tab.url.indexOf(detail) > -1) {
-            injectjs(tab.id);
+            injectjs(tab.id, js);
         }
         else if (tab.url.indexOf(origin) == -1) {
             chrome.tabs.create({url: origin});
@@ -27,19 +34,27 @@
 
     chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         const detail = 'https://archive.org/details';
+        const detail2 = 'https://babel.hathitrust.org/cgi/pt';
+        const js = 'js/content.js';
+        const js2 = 'js/hathitrust.js';
 
-        if (changeInfo.status == 'complete' && tab.url.indexOf(detail) > -1) {
-            const dnr = await loadDnr();
+        if (changeInfo.status == 'complete') {
+            if (tab.url.indexOf(detail) > -1) {
+                const dnr = await loadDnr();
 
-            if (dnr == 1) {
-               injectjs(tabId);
+                if (dnr == 1) {
+                    injectjs(tabId, js);
+                }
+            }
+            else if (tab.url.indexOf(detail2) > -1) {
+                injectjs(tabId, js2);
             }
         }
     });
 
-    function injectjs(tabId) {
+    function injectjs(tabId, js) {
         chrome.scripting.executeScript({
-            files: ['js/content.js']
+            files: [js]
             , target: {tabId}
         });
     }
@@ -188,18 +203,18 @@
     });
 
     const getOption = () => {
-        const host = 'archive.org';
+        const domain = 'archive.org';
         const origin = 'https://archive.org';
+        const ruleid = 6984;
 
         return  {
-            removeRuleIds: [1]
+            removeRuleIds: [ruleid]
             , addRules: [
                 {
-                    id: 1
+                    id: ruleid
                     , priority: 1
                     , condition: {
-                        urlFilter: '*'
-                        , initiatorDomains: [host]
+                        initiatorDomains: [domain]
                     }
                     , action: {
                         type: 'modifyHeaders'
@@ -227,10 +242,9 @@
             .catch(e=>console.error(e));
     }
 
-    var dnr = 0;
-
     // for Brave
-    setTimeout(() => {
+    setTimeout(async () => {
+        const dnr = await loadDnr();
         if (dnr == 0) {
             chrome.runtime.reload();
         }
@@ -239,8 +253,7 @@
     // storage
     // dnr
     function saveDnr() {
-        dnr = 1;
-        chrome.storage.session.set({ 'dnr': dnr });
+        chrome.storage.session.set({ 'dnr': 1 });
     }
 
     async function loadDnr() {

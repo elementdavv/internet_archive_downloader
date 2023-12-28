@@ -138,7 +138,7 @@ export default function(){
         meta.set('Isbn', 'ISBN')
         meta.set('Language', 'Language')
         meta.set('Publisher', 'Publisher')
-        meta.set('Publication date', 'Publication date')
+        meta.set('Publication date', 'Published')
         meta.set('Contributor', 'Contributor')
         const metadata = fromClass('metadata-definition');
 
@@ -169,6 +169,7 @@ export default function(){
         getMetadata();
         getProgress();
         readynotify();
+        window.content1iadinit = true;
         console.log('init complete');
     }
 
@@ -514,7 +515,7 @@ export default function(){
     }
 
     function createZIPPage(view, pageindex) {
-        const name = fileid + '_' + pageindex.toString().padStart(4, '0') + '.jpg';
+        const name = fileid + '_' + pageindex.toString().padStart(4, '0');
         doc.image({view, name});
     }
 
@@ -746,10 +747,7 @@ export default function(){
     if (ff) {
         // native TransformStream and WritableStream only work in firefox 113, use ponyfill instead
         streamSaver.supportsTransferable = false;
-
-        if (globalThis.WebStreamsPolyfill) {
-            streamSaver.WritableStream = globalThis.WebStreamsPolyfill.WritableStream;
-        }
+        streamSaver.WritableStream = globalThis.WebStreamsPolyfill.WritableStream;
     }
 
     // start

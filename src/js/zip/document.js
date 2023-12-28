@@ -29,10 +29,21 @@ class ZIPDocument {
 *    * params: name, directory, lastModified, comment, view 
      */
     image(fileLike) {
-        let name = fileLike.name.trim()
+        let name = fileLike.name.trim();
 
-        if (fileLike.directory && !name.endsWith('/')) name += '/'
-        if (this.files[name]) throw new Error('File already exists.')
+        const data = fileLike.view;
+        var ext = '.unknown';
+
+        if (data.getUint16(0) === 0xffd8) {
+            ext = '.jpg';
+        } else if (data.getUint16(0) === 0x8950 && data.getUint16(2) === 0x4e47) {
+            ext = '.png';
+        }
+
+        name += ext;
+
+        if (fileLike.directory && !name.endsWith('/')) name += '/';
+        if (this.files[name]) throw new Error('File already exists.');
 
         const nameBuf = this.encoder.encode(name);
         this.filenames.push(name);
@@ -59,7 +70,7 @@ class ZIPDocument {
         zipObject.offset = this.offset;
         zipObject.header = header;
         if (zipObject.level !== 0 && !zipObject.directory) {
-            header.view.setUint16(4, 0x0800)
+            header.view.setUint16(4, 0x0800);
         }
         header.view.setUint32(0, 0x14000808);
         header.view.setUint16(6, (((date.getHours() << 6) | date.getMinutes()) << 5) | date.getSeconds() / 2, true);
@@ -81,9 +92,9 @@ class ZIPDocument {
     writerImage(zipObject, view) {
         if (zipObject.directory) return;
         zipObject.crc = new Crc32();
-        zipObject.crc.append(view)
-        zipObject.uncompressedLength += view.byteLength
-        zipObject.compressedLength += view.byteLength
+        zipObject.crc.append(view);
+        zipObject.uncompressedLength += view.byteLength;
+        zipObject.compressedLength += view.byteLength;
         this.write(view);
     }
 
@@ -116,27 +127,27 @@ class ZIPDocument {
             file = this.files[this.filenames[indexFilename]];
             length += 46 + file.nameBuf.length + file.comment.length
         }
-        const data = getDataHelper(length + 22)
+        const data = getDataHelper(length + 22);
         for (indexFilename = 0; indexFilename < this.filenames.length; indexFilename++) {
             file = this.files[this.filenames[indexFilename]];
             data.view.setUint32(index, 0x504b0102);
             data.view.setUint16(index + 4, 0x1400);
             data.array.set(file.header.array, index + 6);
-            data.view.setUint16(index + 32, file.comment.length, true)
+            data.view.setUint16(index + 32, file.comment.length, true);
             if (file.directory) {
-                data.view.setUint8(index + 38, 0x10)
+                data.view.setUint8(index + 38, 0x10);
             }
             data.view.setUint32(index + 42, file.offset, true);
             data.array.set(file.nameBuf, index + 46);
-            data.array.set(file.comment, index + 46 + file.nameBuf.length)
-            index += 46 + file.nameBuf.length + file.comment.length
+            data.array.set(file.comment, index + 46 + file.nameBuf.length);
+            index += 46 + file.nameBuf.length + file.comment.length;
         }
         data.view.setUint32(index, 0x504b0506);
         data.view.setUint16(index + 8, this.filenames.length, true);
         data.view.setUint16(index + 10, this.filenames.length, true);
         data.view.setUint32(index + 12, length, true);
         data.view.setUint32(index + 16, this.offset, true);
-        this.write(data.array)
+        this.write(data.array);
         // this.writer.close();
     }
 
@@ -147,36 +158,36 @@ class ZIPDocument {
 
 class Crc32 {
     constructor () {
-        this.crc = -1
+        this.crc = -1;
     }
 
     append (data) {
-        var crc = this.crc | 0; var table = this.table
+        var crc = this.crc | 0; var table = this.table;
         for (var offset = 0, len = data.byteLength | 0; offset < len; offset++) {
-            crc = (crc >>> 8) ^ table[(crc ^ data.getInt8(offset)) & 0xFF]
+            crc = (crc >>> 8) ^ table[(crc ^ data.getInt8(offset)) & 0xFF];
         }
-        this.crc = crc
+        this.crc = crc;
     }
 
     get () {
-        return ~this.crc
+        return ~this.crc;
     }
 }
 
 Crc32.prototype.table = (() => {
-    var i; var j; var t; var table = []
+    var i; var j; var t; var table = [];
     for (i = 0; i < 256; i++) {
-        t = i
+        t = i;
         for (j = 0; j < 8; j++) {
-            t = (t & 1) ? (t >>> 1) ^ 0xEDB88320 : t >>> 1
+            t = (t & 1) ? (t >>> 1) ^ 0xEDB88320 : t >>> 1;
         }
-        table[i] = t
+        table[i] = t;
     }
-    return table
+    return table;
 })()
 
 const getDataHelper = byteLength => {
-    var uint8 = new Uint8Array(byteLength)
+    var uint8 = new Uint8Array(byteLength);
     return {
         array: uint8,
         view: new DataView(uint8.buffer)

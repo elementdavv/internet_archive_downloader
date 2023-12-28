@@ -4,7 +4,7 @@
     , "description": "__MSG_description__"
     , "homepage_url": "https://github.com/elementdavv/internet_archive_downloader"
     , "name": "Internet Archive Downloader"
-    , "version": "0.6.3"
+    , "version": "0.7.0"
     , "default_locale": "en"
     , "browser_specific_settings": {
         "gecko": {
@@ -40,6 +40,9 @@
             "css/*"
             , "js/*"
         ]
-        , "matches": ["https://archive.org/*"]
+        , "matches": [
+            "https://archive.org/*"
+            , "https://babel.hathitrust.org/*"
+        ]
     }]
 }

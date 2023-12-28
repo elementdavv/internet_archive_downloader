@@ -20,19 +20,32 @@ export default function(){
     const ff = /Firefox/.test(navigator.userAgent);                     // is firefox
 
     const buttonstring = `
-<div class='topinblock button scale-btn'>
-    <select id='iadscaleid' class='iadselect'>
-        <option value='1' selected>★★★★</option>
-    </select>
-    <div class='iadlabel'>Quality</div>
-</div>
-<div class='topinblock download-btn'>
-    <button class='button' type='button' onclick=window.postMessage({extid:'${extid}',cmd:'begin',ctrl:event.ctrlKey||event.metaKey},'${origin}')>
-        <div>
-            <span class='iconochive-download'></span>
-            <span class='icon-label' id='iadprogressid'></span>
+<div class='accordion-item null panel svelte-g6tm5k'>
+    <h2 class='accordion-header' id='h1703477325693-198'>
+        <button class='accordion-button svelte-g6tm5k collapsed' type='button' data-bs-toggle='collapse' data-bs-target='#c1703477325693-198' aria-expanded='false' aria-controls='c1703477325693-198'>
+            <div class='d-flex gap-2 align-items-center me-1'><i class='fa-solid fa-hippo' slot='icon'></i>Ayesha</div>
+        </button>
+    </h2>
+    <div id='c1703477325693-198' class='accordion-collapse collapse' aria-labelledby='h1703477325693-198' data-bs-parent='#controls' style>
+        <div class='accordion-body'>
+            <div class="d-flex gap-2 align-items-center">
+            <fieldset class='mb-3'>
+                <legend class='fs-5'>Quality</legend>
+                <select id='iadscaleid' class='form-select' style='border:0;padding-right:1.7rem;'>
+                    <option value='size=full'>full size</option>
+                </select>
+            </fieldset>
+            <p class='mb-3'>
+                <button type='button' class='btn btn-outline-dark' onclick=window.postMessage({extid:'${extid}',cmd:'begin',ctrl:event.ctrlKey||event.metaKey},'${origin}')>
+                    <div>
+                        <span class='fa-solid fa-arrow-down'></span>
+                        <span style='display:block' id='iadprogressid'></span>
+                    </div>
+                </button>
+            </p>
+            </div>
         </div>
-    </button>
+    </div>
 </div>
 `;
 
@@ -48,7 +61,7 @@ export default function(){
 
         switch(data.cmd) {
             case 'init':
-                br = JSON.parse(data.br); 
+                br = JSON.parse(data.manifest); 
                 init();
                 break;
             case 'begin':
@@ -78,12 +91,12 @@ export default function(){
     }
 
     function loadButton() {
-        const ab = fromClass('action-buttons-section');
+        const ac = fromId('controls')?.getElementsByClassName("border-top");
 
-        if (ab.length == 0) return;
+        if (ac.length == 0) return;
 
         console.log('load buttons');
-        ab[0].insertAdjacentHTML("afterbegin", buttonstring);
+        ac[0].insertAdjacentHTML("afterend", buttonstring);
     }
 
     function loadScales() {
@@ -92,65 +105,40 @@ export default function(){
         if (!s) return;
 
         console.log('load scales');
-        const factors = br.reductionFactors;
-        const star = "★★★★";
-        var n = 0;
-        var lastscale = 1;
+        var n = 3;
 
-        factors.forEach(f => {
-            const scal = Math.pow(2, Math.floor(Math.log2(Math.max(1, f.reduce))));
+        while (n > 0) {
+            const o = document.createElement('option');
+            const v = n * br.defaultImage.height;
+            o.value = 'height=' + v;
+            o.innerText = 'high: ' + v;
 
-            if (scal > lastscale) {
-                if (n < 3) {
-                    var o = document.createElement('option');
-                    o.value = scal;
-                    o.innerText = star.substring(++n);
-                    s.appendChild(o);
-                }
+            if (n == 3) o.selected = true;
 
-                lastscale = scal;
-            }
-        });
+            s.appendChild(o);
+            n--;
+        }
     }
 
-    var fileid = "";            // book basename
-    var data = [];              // page urls
+    var fileid = '';            // book basename
+    var url = '';               // page urls
     var pagecount = 0;          // page count
 
     function getBookInfo() {
         console.log('get book info');
-        fileid = br.bookId;
-        data = br.data;
-        pagecount = data.length;
+        fileid = br.id.replace(/[^a-zA-Z0-9_]/g, '_');
+        url = 'https://babel.hathitrust.org/cgi/imgsrv/image?id=' + br.id;
+        pagecount = br.totalSeq;
     }
 
     var info = {};              // book metadata
 
     function getMetadata() {
         console.log('get metadata');
-        const title = fromClass('item-title');
-
-        if (title.length > 0) {
-            info.Title = title[0].innerText;
-        }
-
-        const meta = new Map();
-        meta.set('by', 'Author');
-        meta.set('Isbn', 'ISBN')
-        meta.set('Language', 'Language')
-        meta.set('Publisher', 'Publisher')
-        meta.set('Publication date', 'Published')
-        meta.set('Contributor', 'Contributor')
-        const metadata = fromClass('metadata-definition');
-
-        for (var i = 0; i < metadata.length; i++) {
-            const metaname = metadata[i].children[0].innerText;
-
-            if (meta.has(metaname)) {
-                info[meta.get(metaname)] = metadata[i].children[1].innerText;
-            }
-        }
-
+        info.Title = br.metadata.title;
+        info.Author = br.metadata.author;
+        info.Publisher = br.metadata.publisher;
+        info.Published = br.metadata.publicationDate;
         info.Producer = 'Element Davv';
     }
 
@@ -170,7 +158,7 @@ export default function(){
         getMetadata();
         getProgress();
         readynotify();
-        window.content1iadinit = true;
+        window.hathitrust1iadinit = true;
         console.log('init complete');
     }
 
@@ -222,6 +210,9 @@ export default function(){
         else if (status == 2 || status == 3) {
             readynotify();
         }
+        else if (status == 4) {
+            tocontinue();
+        }
         else {
             await clearwaitswfile();
             getDownloadInfo();
@@ -231,11 +222,11 @@ export default function(){
     };
 
     var filename = "";          // filename to save
-    var scale = 1;              // page scale
+    var scale = "";             // page scale
 
     function getDownloadInfo() {
         scale = fromId('iadscaleid').value;
-        filename = fileid + '_' + scale + (ctrl ? '.zip' : '.pdf');
+        filename = fileid + '_' + (scale.indexOf('full') > -1 ? 'full' : scale.substring(7)) + (ctrl ? '.zip' : '.pdf');
     }
 
     async function download() {
@@ -338,7 +329,7 @@ export default function(){
     var paused = 0;             // paused count
     var recover = 0;            // recover file
     var ac = null;              // AbortController
-    const FILELIMIT = 6;        // parallel download limit
+    const FILELIMIT = 2;        // parallel download limit
     const TRYLIMIT = 3;         // each leaf retry limit
 
     function initleaf() {
@@ -384,11 +375,24 @@ export default function(){
         }
     }
 
+    function towait() {
+        if (status == 1) {
+            waitnotify();
+            pause();
+        }
+    }
+
+    function tocontinue() {
+        if (status == 4) {
+            continuenotify();
+            resume();
+        }
+    }
+
     async function nextLeaf() {
         if (++complete >= jobcount) {
             await clear();
             completenotify();
-            returnBook();
         }
         else {
             updatenotify();
@@ -416,15 +420,11 @@ export default function(){
         const pageindex = job.pageindex;
         const tri = job.tri;
         console.log(`chunk ${pageindex}`);
-        var uri = data[pageindex].uri;
-        uri += uri.indexOf("?") > -1 ? "&" : "?";
-        uri += `scale=${scale}&rotate=0`;
-        const width = Math.ceil(data[pageindex].width / scale);
-        const height = Math.ceil(data[pageindex].height / scale);
-        syncfetch(pageindex, tri, uri, width, height);
+        var uri = url + `&seq=` + (pageindex + br.firstPageSeq) + '&' + scale;
+        syncfetch(pageindex, tri, uri);
     }
 
-    async function syncfetch(pageindex, tri, uri, width, height) {
+    async function syncfetch(pageindex, tri, uri) {
         try {
             const response = await fetch(uri, {
                 method: "GET",
@@ -438,7 +438,7 @@ export default function(){
 
                 if (doc) {
                     const view = new DataView(buffer);
-                    createPage(view, pageindex, width, height);
+                    createPage(view, pageindex);
                     nextLeaf();
                 }
             }
@@ -455,8 +455,20 @@ export default function(){
                 // firefox: networkerror when fetch resource
                 // unexpected aborted
                 // gateway bad/timeout
-                if (/fetch|abort|502|504/.test(message) && ++tri < TRYLIMIT) {
-                    console.log(`trunk ${pageindex} failed, retry ${tri}`)
+                if (/fetch|abort|429|502|504/.test(message) && tri < TRYLIMIT) {
+                    if (message.indexOf('429') > -1) {
+                        if (confirm(getMessage("confirmwait"))) {
+                            towait();
+                        }
+                        else {
+                            abort({sync: sw, message});
+                            return;
+                        }
+                    }
+                    else {
+                        console.log(`trunk ${pageindex} failed, retry ${++tri}`)
+                    }
+
                     jobs.enque({pageindex, tri});
                     jobcount++;
                     nextLeaf();
@@ -504,14 +516,14 @@ export default function(){
         }
     }
 
-    function createPage(view, pageindex, width, height) {
+    function createPage(view, pageindex) {
         console.log(`chunk ${pageindex} ready`);
 
         if (ctrl) {
             createZIPPage(view, pageindex);
         }
         else {
-            createPDFPage(view, pageindex, width, height);
+            createPDFPage(view, pageindex);
         }
     }
 
@@ -520,14 +532,8 @@ export default function(){
         doc.image({view, name});
     }
 
-    function createPDFPage(view, pageindex, width, height) {
-        doc.addPage({
-            pageindex
-            , margin: 0
-            , size: [width, height]
-        });
-
-        doc.image(view, 0, 0);
+    function createPDFPage(view, pageindex) {
+        doc.image2(pageindex, view, 0, 0);
     }
 
     var filehandle = null;      // filesystemfilehandle
@@ -613,28 +619,6 @@ export default function(){
         });
     }
 
-    function returnBook() {
-        console.log('return the book.');
-        const uri = 'https://archive.org/services/loans/loan';
-        const formdata = new FormData();
-        formdata.set('action', 'return_loan');
-        formdata.set('identifier', fileid);
-
-        fetch(uri, {
-            method: "POST",
-            credentials: "include",
-            body: formdata,
-        }).then(response => {
-            if (response.ok) {
-                console.log('reload page.');
-                location.reload();
-            }
-            else {
-                throw new Error(response.status);
-            }
-        }).catch(e=>console.log(e));
-    }
-
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -657,7 +641,6 @@ export default function(){
         progress.classList.add('iadprogress');
         progress.textContent = getMessage("downloading");
         progress.style.width = '0%';
-        refreshTip();
         status = 1;
     }
 
@@ -665,12 +648,23 @@ export default function(){
         progress.style.width = (complete / jobcount * 100) + '%';
     }
 
+    function waitnotify() {
+        console.log('wait');
+        progress.textContent = getMessage("wait");
+        status = 4;
+    }
+
+    function continuenotify() {
+        console.log('continue');
+        progress.textContent = getMessage("downloading");
+        status = 1;
+    }
+
     function completenotify() {
         const [m, s] = testend();
         console.log(`download completed in ${m}m${s}s`);
         progress.classList.remove('iadprogress');
         progress.textContent = getMessage("complete");
-        refreshTip();
         status = 2;
     }
 
@@ -678,63 +672,17 @@ export default function(){
         console.log('failed');
         progress.classList.remove('iadprogress');
         progress.textContent = getMessage("fail");
-        refreshTip();
         status = 3;
     }
 
     function readynotify() {
         console.log('ready');
         progress.textContent = getMessage("download");
-        refreshTip();
         status = 0;
-    }
-
-    function refreshTip() {
-        setTimeout(() => {
-            try {
-                var top = 0;
-                var left = 0;
-                const beforeWidth = 10;
-                const beforeHeight = 5;
-
-                const scale_btn = fromClass('scale-btn')[0];
-                const sba = window.getComputedStyle(scale_btn, ':after');
-                const sbaw = sba.getPropertyValue('width');
-                const scaleAfterWidth = Number(sbaw.replace('px', ''));
-
-                top = scale_btn.offsetHeight + 3;
-                left = scale_btn.offsetLeft + (scale_btn.offsetWidth - beforeWidth) / 2;
-                scale_btn.style.setProperty('--beforetop', `${top}px`);
-                scale_btn.style.setProperty('--beforeleft', `${left}px`);
-                top += beforeHeight;
-                left = scale_btn.offsetLeft + (scale_btn.offsetWidth - scaleAfterWidth) / 2;
-                scale_btn.style.setProperty('--aftertop', `${top}px`);
-                scale_btn.style.setProperty('--afterleft', `${left}px`);
-
-                const download_btn = fromClass('download-btn')[0].children[0];
-                const dba = window.getComputedStyle(download_btn, ':after');
-                const dbaw = dba.getPropertyValue('width');
-                const downloadAfterWidth = Number(dbaw.replace('px', ''));
-
-                top = download_btn.offsetHeight + 3;
-                left = download_btn.offsetLeft + (download_btn.offsetWidth - beforeWidth) / 2;
-                download_btn.style.setProperty('--beforetop', `${top}px`);
-                download_btn.style.setProperty('--beforeleft', `${left}px`);
-                top += beforeHeight;
-                left = download_btn.offsetLeft + (download_btn.offsetWidth - downloadAfterWidth) / 2;
-                download_btn.style.setProperty('--aftertop', `${top}px`);
-                download_btn.style.setProperty('--afterleft', `${left}px`);
-            }
-            catch(e){}
-        }, 500);
     }
 
     function fromId(id) {
         return document.getElementById(id);
-    }
-
-    function fromClass(cls) {
-        return document.getElementsByClassName(cls);
     }
 
     function getMessage(messageName, substitutions) {
@@ -754,6 +702,6 @@ export default function(){
     // start
     const manifest = chrome.runtime.getManifest();
     console.log(`${manifest.name} ${manifest.version} in action`);
-    loadScript("/js/stub.js");
+    loadScript("/js/stub1.js");
 
 };
