@@ -27,13 +27,23 @@ export default function(){
     </h2>
     <div id='c1703477325693-198' class='accordion-collapse collapse' aria-labelledby='h1703477325693-198' data-bs-parent='#controls' style>
         <div class='accordion-body'>
-            <div class="d-flex gap-2 align-items-center">
+            <div class="d-flex gap-4 align-items-center">
             <fieldset class='mb-3'>
                 <legend class='fs-5'>Quality</legend>
-                <select id='iadscaleid' class='form-select' style='border:0;padding-right:1.7rem;'>
+                <select id='iadscaleid' class='form-select' style='border:0;'>
                     <option value='size=full'>full size</option>
                 </select>
             </fieldset>
+            <fieldset class='mb-3'>
+                <legend class='fs-5'>Tasks</legend>
+                <select id='iadtasksid' class='form-select' style='border:0;'>
+                    <option value='6' selected>6</option>
+                    <option value='4'>4</option>
+                    <option value='2'>2</option>
+                    <option value='1'>1</option>
+                </select>
+            </fieldset>
+            </div>
             <p class='mb-3'>
                 <button type='button' class='btn btn-outline-dark' onclick=window.postMessage({extid:'${extid}',cmd:'begin',ctrl:event.ctrlKey||event.metaKey},'${origin}')>
                     <div>
@@ -42,7 +52,6 @@ export default function(){
                     </div>
                 </button>
             </p>
-            </div>
         </div>
     </div>
 </div>
@@ -134,10 +143,10 @@ export default function(){
 
     function getMetadata() {
         console.log('get metadata');
-        info.Title = br.metadata.title;
-        info.Author = br.metadata.author;
-        info.Publisher = br.metadata.publisher;
-        info.Published = br.metadata.publicationDate;
+        if (br.metadata.title) info.Title = br.metadata.title;
+        if (br.metadata.author) info.Author = br.metadata.author;
+        if (br.metadata.publisher) info.Publisher = br.metadata.publisher;
+        if (br.metadata.publicationDate) info.PublicationDate = br.metadata.publicationDate;
         info.Producer = 'Element Davv';
     }
 
@@ -222,9 +231,11 @@ export default function(){
 
     var filename = "";          // filename to save
     var scale = "";             // page scale
+    var tasks = 6;              // parallel tasks
 
     function getDownloadInfo() {
         scale = fromId('iadscaleid').value;
+        tasks = parseInt(fromId('iadtasksid').value);
         filename = fileid + '_' + (scale.indexOf('full') > -1 ? 'full' : scale.substring(7)) + (ctrl ? '.zip' : '.pdf');
     }
 
@@ -328,7 +339,7 @@ export default function(){
     var paused = 0;             // paused count
     var recover = 0;            // recover file
     var ac = null;              // AbortController
-    const FILELIMIT = 2;        // parallel download limit
+    var waitInterval = null;    // wait for too many request
     const TRYLIMIT = 3;         // each leaf retry limit
 
     function initleaf() {
@@ -343,6 +354,7 @@ export default function(){
         paused = 0;
         recover = 0;
         ac = new AbortController();
+        waitInterval = null;
     }
 
     function getLeafs() {
@@ -350,7 +362,7 @@ export default function(){
         startnotify();
         initleaf();
 
-        Array(FILELIMIT).fill().forEach(() => {
+        Array(tasks).fill().forEach(() => {
             dispatch();
         });
     }
@@ -378,11 +390,23 @@ export default function(){
         if (status == 1) {
             waitnotify();
             pause();
+            var waitlen = 60;
+
+            waitInterval = setInterval(function() {
+                if (--waitlen <= 0) {
+                    tocontinue();
+                }
+                else {
+                    waitprogressnotify(waitlen);
+                }
+            }, 1000);
         }
     }
 
     function tocontinue() {
         if (status == 4) {
+            clearInterval(waitInterval);
+            waitInterval = null;
             continuenotify();
             resume();
         }
@@ -456,13 +480,7 @@ export default function(){
                 // gateway bad/timeout
                 if (/fetch|abort|429|502|504/.test(message) && tri < TRYLIMIT) {
                     if (message.indexOf('429') > -1) {
-                        if (confirm(getMessage("confirmwait"))) {
-                            towait();
-                        }
-                        else {
-                            abort({sync: sw, message});
-                            return;
-                        }
+                        towait();
                     }
                     else {
                         console.log(`trunk ${pageindex} failed, retry ${++tri}`)
@@ -649,8 +667,12 @@ export default function(){
 
     function waitnotify() {
         console.log('wait');
-        progress.textContent = getMessage("wait");
+        progress.textContent = getMessage('wait');
         status = 4;
+    }
+
+    function waitprogressnotify(waitlen) {
+        progress.textContent = getMessage('wait') + waitlen + 's';
     }
 
     function continuenotify() {

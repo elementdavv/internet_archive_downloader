@@ -28,6 +28,9 @@
             console.log(`no book info, wait ${step}`);
             r = 0;
         }
+        else if (!window.manifest.allowSinglePageDownload) {
+            r = 1;
+        }
         else {
             console.log('done');
         }

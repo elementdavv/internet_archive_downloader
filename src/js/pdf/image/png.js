@@ -79,6 +79,7 @@ class PNGImage {
       // An array with N elements, where N is two times the number of color components.
       const { rgb } = this.image.transparency;
       const mask = [];
+
       for (let x of rgb) {
         mask.push(x, x);
       }
@@ -144,11 +145,13 @@ class PNGImage {
       const len = pixels.length;
       // For 16bit images copy only most significant byte (MSB) - PNG data is always stored in network byte order (MSB first)
       const skipByteCount = this.image.bits === 16 ? 1 : 0;
+
       while (i < len) {
         for (let colorIndex = 0; colorIndex < colorCount; colorIndex++) {
           imgData[p++] = pixels[i++];
           i += skipByteCount;
         }
+
         alphaChannel[a++] = pixels[i++];
         i += skipByteCount;
       }
@@ -165,8 +168,8 @@ class PNGImage {
     // return this.image.decodePixels(pixels => {
       // const alphaChannel = Buffer.alloc(this.width * this.height);
       const alphaChannel = new Uint8Array(this.width * this.height);
-
       let i = 0;
+
       for (let j = 0, end = pixels.length; j < end; j++) {
         alphaChannel[i++] = transparency[pixels[j]];
       }

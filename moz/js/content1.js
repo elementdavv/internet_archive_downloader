@@ -139,7 +139,7 @@ export default function(){
         meta.set('Isbn', 'ISBN')
         meta.set('Language', 'Language')
         meta.set('Publisher', 'Publisher')
-        meta.set('Publication date', 'Published')
+        meta.set('Publication date', 'PublicationDate')
         meta.set('Contributor', 'Contributor')
         const metadata = fromClass('metadata-definition');
 

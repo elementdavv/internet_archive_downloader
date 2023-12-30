@@ -52,15 +52,6 @@ const DecodeStream = (function() {
         buffer2[i] = buffer[i];
       return this.buffer = buffer2;
     },
-    getByte: function decodestream_getByte() {
-      var pos = this.pos;
-      while (this.bufferLength <= pos) {
-        if (this.eof)
-          return null;
-        this.readBlock();
-      }
-      return this.buffer[this.pos++];
-    },
     getBytes: function decodestream_getBytes(length) {
       var pos = this.pos;
 
@@ -83,38 +74,6 @@ const DecodeStream = (function() {
 
       this.pos = end;
       return this.buffer.subarray(pos, end);
-    },
-    lookChar: function decodestream_lookChar() {
-      var pos = this.pos;
-      while (this.bufferLength <= pos) {
-        if (this.eof)
-          return null;
-        this.readBlock();
-      }
-      return String.fromCharCode(this.buffer[this.pos]);
-    },
-    getChar: function decodestream_getChar() {
-      var pos = this.pos;
-      while (this.bufferLength <= pos) {
-        if (this.eof)
-          return null;
-        this.readBlock();
-      }
-      return String.fromCharCode(this.buffer[this.pos++]);
-    },
-    makeSubStream: function decodestream_makeSubstream(start, length, dict) {
-      var end = start + length;
-      while (this.bufferLength <= end && !this.eof)
-        this.readBlock();
-      return new Stream(this.buffer, start, length, dict);
-    },
-    skip: function decodestream_skip(n) {
-      if (!n)
-        n = 1;
-      this.pos += n;
-    },
-    reset: function decodestream_reset() {
-      this.pos = 0;
     }
   };
 

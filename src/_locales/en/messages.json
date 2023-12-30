@@ -3,7 +3,6 @@
     , "title": { "message": "Internet Archive Downloader" }
     , "alerterror": { "message": "$1.\nPlease contact the developer." }
     , "confirmabort": { "message": "To abort?" }
-    , "confirmwait": { "message": "It is coffee time. Take a break, or to abort?" }
     , "download": { "message": "Download" }
     , "downloading": { "message": "Downloading" }
     , "wait": { "message": "Waiting..." }
