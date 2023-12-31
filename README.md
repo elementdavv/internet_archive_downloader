@@ -2,9 +2,11 @@
 
 [Internet Archive](https://archive.org) holds more than 34 millions books for free access. Some mean to be read online by borrowing for a limit period. This extension can download these books for later reading.
 
+In new v0.7.0, [HathiTrust Digital Library](https://hathitrust.org) support was added. All books with full view permission can be downloaded at a click.
+
 ## Features
-* Download a book as a Pdf file
-* Download a book as a collection of Jpeg files one for each leaf
+* Download a book as a PDF file
+* Download a book as a collection of JPEG/PNG files one for each leaf
 * Optional leaf quality
 * Download multiple books in parallel
 
@@ -24,25 +26,40 @@ Alternatively, install automatically from their repositories:
 - [Mozilla Addons (Firefox)](https://addons.mozilla.org/en-US/firefox/addon/internet_archive_downloader/)(Optional permissions must be granted as well)
 
 ## Usage
-In [Internet Archive](https://archive.org), the availability of books lies in three categories:
+### Internet Archive:
+In [archive.org](https://archive.org), the availability of books lies in three categories:
 1) Lending Library
 2) Borrow 14 days
 3) Always Available
 
 The extension works with category 1 and 2.
 
-After borrowing a book, two new buttons read "Quality" and "Download" will appear under the book viewer, beside the "Favorite" button. 
-<image src="resources/borrow.png">
+After borrowing a book, two new buttons named "Quality" and "Download" will appear under the book viewer, beside the "Favorite" button. 
+<image src="resources/capture/borrow1_1280.png">
 
-* To get current book as Pdf file, click the "Download" button.
-* To get each leaf as a Jpeg file, click the "Download" button with Ctrl key pressed(Command key on Mac).
+* To get current book as PDF file, click the "Download" button.
+* To get each leaf as a JPEG file, click the "Download" button with Ctrl key pressed(Command key on Mac).
 
 With download begins, the button will turn into a progress bar.
-<image src="resources/download.png">
+<image src="resources/capture/download1_1280.png">
 
 There are variant leaf qualities for each book which the extension keeps up to four levels. Click the stars on the "Quality" button to choose one. Default is the best quality(the original image, without scaled down).
 
-When download completes, the book will be returned automatically to make it available to other users. In [Internet Archive](https://archive.org), books are always allowed to loan to limited users, others have to wait.
+With download completes, the book will be returned automatically to make it available to other users. In [Internet Archive](https://archive.org), books are always allowed to loan to limited users, others have to wait.
+
+### HathiTrust:
+No login, no borrows required. Once a book page is loaded in [hathitrust.org](https://hathitrust.org), a new section named "Ayesha" will appear above the "Download" section on the left-hand side of the page. Click it to show the download panel. There are three controlls, named "Quality", "Tasks" and "Download".
+<image src="resources/capture/borrow2_1280.png">
+
+* To get current book as PDF file, click the "Download" button.
+* To get each leaf as a image file(JPEG and/or PNG), click the "Download" button with Ctrl key pressed(Command key on Mac).
+
+With download begins, the button will turn into a progress bar.
+<image src="resources/capture/download2_1280.png">
+
+As for leaf quality controll "Quality", the first option is "full size", which will download every page in their highest size, but they may be much different between each others. Other options will download all pages in almost the same size.
+
+Another controll is "Tasks", by which download task number running synchronously can be selected. HathiTrust server does not allowed frequent access. The extension have to take some breaks during the download process. Choose a suitable task number to get the best experience.
 
 ## Availability
 * Chromium family(Chrome, Edge, Brave, Vivaldi, Opera, Yandex, Kiwi, etc) version 90+ supported
@@ -55,4 +72,4 @@ When download completes, the book will be returned automatically to make it avai
 Any questions and/or suggestions are appreciatiated.
 
 ## Donation
-If you found the extension helpful consider supporting me with a coffee. <a href='https://www.buymeacoffee.com/timelegend' target='_blank'><img src='resources/bmc-orange.png' style='width:100px;height:28px'></a>
+If you found the extension helpful consider supporting me with a coffee. <a href='https://www.buymeacoffee.com/timelegend' target='_blank'><img src='resources/logo/bmc-orange.png' style='width:100px;height:28px'></a>
