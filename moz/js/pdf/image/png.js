@@ -5,7 +5,6 @@
  * Distributed under terms of the GPL3 license.
  */
 
-import zlib from '../../zlib/index.js';
 import PNG from '../../png-js/png.js';
 
 class PNGImage {
@@ -88,18 +87,21 @@ class PNGImage {
     } else if (this.image.transparency.indexed) {
       // Create a transparency SMask for the image based on the data
       // in the PLTE and tRNS sections. See below for details on SMasks.
-      dataDecoded = true;
-      return this.loadIndexedAlphaChannel();
+      throw new Error('indexed color not supported');
+      // dataDecoded = true;
+      // return this.loadIndexedAlphaChannel();
     } else if (hasAlphaChannel) {
       // For PNG color types 4 and 6, the transparency data is stored as a alpha
       // channel mixed in with the main image data. Separate this data out into an
       // SMask object and store it separately in the PDF.
-      dataDecoded = true;
-      return this.splitAlphaChannel();
+      throw new Error('alpha channel not supported');
+      // dataDecoded = true;
+      // return this.splitAlphaChannel();
     }
 
     if (isInterlaced && !dataDecoded) {
-      return this.decodeData();
+      throw new Error('interlace not supported');
+      // return this.decodeData();
     }
 
     this.finalize();
@@ -128,63 +130,6 @@ class PNGImage {
     // free memory
     this.image = null;
     return (this.imgData = null);
-  }
-
-  splitAlphaChannel() {
-    const pixels = this.image.decodePixels();
-    // return this.image.decodePixels(pixels => {
-      let a, p;
-      const colorCount = this.image.colors;
-      const pixelCount = this.width * this.height;
-      // const imgData = Buffer.alloc(pixelCount * colorCount);
-      // const alphaChannel = Buffer.alloc(pixelCount);
-      const imgData = new Uint8Array(pixelCount * colorCount);
-      const alphaChannel = new Uint8Array(pixelCount);
-
-      let i = (p = a = 0);
-      const len = pixels.length;
-      // For 16bit images copy only most significant byte (MSB) - PNG data is always stored in network byte order (MSB first)
-      const skipByteCount = this.image.bits === 16 ? 1 : 0;
-
-      while (i < len) {
-        for (let colorIndex = 0; colorIndex < colorCount; colorIndex++) {
-          imgData[p++] = pixels[i++];
-          i += skipByteCount;
-        }
-
-        alphaChannel[a++] = pixels[i++];
-        i += skipByteCount;
-      }
-
-      this.imgData = zlib.deflate.compress(imgData);
-      this.alphaChannel = zlib.deflate.compress(alphaChannel);
-      return this.finalize();
-    // });
-  }
-
-  loadIndexedAlphaChannel() {
-    const transparency = this.image.transparency.indexed;
-    const pixels = this.image.decodePixels();
-    // return this.image.decodePixels(pixels => {
-      // const alphaChannel = Buffer.alloc(this.width * this.height);
-      const alphaChannel = new Uint8Array(this.width * this.height);
-      let i = 0;
-
-      for (let j = 0, end = pixels.length; j < end; j++) {
-        alphaChannel[i++] = transparency[pixels[j]];
-      }
-
-      this.alphaChannel = zlib.deflate.compress(alphaChannel);
-      return this.finalize();
-    // });
-  }
-
-  decodeData() {
-    const pixels = this.image.decodePixels();
-    // this.image.decodePixels(pixels => {
-      this.imgData = zlib.deflate.compress(pixels);
-      this.finalize();
-    // });
   }
 }
 

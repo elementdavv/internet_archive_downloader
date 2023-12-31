@@ -391,7 +391,7 @@ export default function(){
         if (status == 1) {
             waitnotify();
             pause();
-            var waitlen = 60;
+            var waitlen = 61;
 
             waitInterval = setInterval(function() {
                 if (--waitlen <= 0) {
