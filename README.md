@@ -54,7 +54,7 @@ No login, no borrows required. Once a book page is loaded in [hathitrust.org](ht
 <image src="resources/capture/borrow2_1280.png">
 
 * To get current book as PDF file, click the "Download" button.
-* To get each leaf as an image file(JPEG and/or PNG), click the "Download" button with Ctrl key pressed(Command key on Mac).
+* To get each leaf as an image file(JPEG or PNG), click the "Download" button with Ctrl key pressed(Command key on Mac).
 
 With download begins, the button will turn into a progress bar.
 <image src="resources/capture/download2_1280.png">
@@ -68,7 +68,7 @@ Even for some books which HathiTrust provides whole downloads, the produced PDF 
 ## Availability
 * Chromium family(Chrome, Edge, Brave, Vivaldi, Opera, Yandex, Kiwi, etc) version 90+ supported
 * Firefox version 115+ supported
-* For Brave, item 'File System Access API' in 'brave://flags' page should be enabled.
+* For Brave below version 1.67.119, item 'File System Access API' in 'brave://flags' page should be enabled.
 
 ## License
 [GPL3](LICENSE) ©Element Davv
@@ -76,4 +76,4 @@ Even for some books which HathiTrust provides whole downloads, the produced PDF 
 Any questions and/or suggestions are appreciatiated.
 
 ## Donation
-If you found the extension helpful consider supporting me with a coffee. <a href='https://www.buymeacoffee.com/timelegend' target='_blank'><img src='resources/logo/bmc-orange.png' style='width:100px;height:28px'></a>
+If you found the extension helpful consider supporting me with a coffee <a href='https://www.buymeacoffee.com/timelegend' target='_blank'><img src='resources/logo/bmc-orange.png' style='width:100px;height:28px'></a> or some coins [![donate](resources/pp-logo.png)](https://paypal.me/timelegend).
