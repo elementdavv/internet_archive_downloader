@@ -76,4 +76,4 @@ Even for some books which HathiTrust provides whole downloads, the produced PDF 
 Any questions and/or suggestions are appreciatiated.
 
 ## Donation
-If you found the extension helpful consider supporting me with a coffee <a href='https://www.buymeacoffee.com/timelegend' target='_blank'><img src='resources/logo/bmc-orange.png' style='width:100px;height:28px'></a> or some coins [![donate](resources/logo/pp-logo.png)](https://paypal.me/timelegend).
+If you found the extension helpful consider supporting me with a coffee <a href='https://www.buymeacoffee.com/timelegend' target='_blank'><img src='resources/logo/bmc-orange.png' style='width:100px;height:28px'></a> or some coins [![donate](resources/logo/paypal-logo.png)](https://paypal.me/timelegend).
