@@ -27,7 +27,7 @@ export default function(){
     <div class='iadlabel'>Quality</div>
 </div>
 <div class='topinblock download-btn'>
-    <button class='button' type='button' onclick=window.postMessage({extid:'${extid}',cmd:'begin',ctrl:event.ctrlKey||event.metaKey},'${origin}')>
+    <button class='button' type='button' onclick=window.postMessage({extid:'${extid}',cmd:'begin',ctrl:event.ctrlKey||event.metaKey,alt:event.altKey},'${origin}')>
         <div>
             <span class='iconochive-download'></span>
             <span class='icon-label' id='iadprogressid'></span>
@@ -38,7 +38,8 @@ export default function(){
 
     var br = {};                // book reader
     var status = 0;             // 0:idle, 1:downloading, 2:completed, 3:failed
-    var ctrl = false;           // ctrlKey
+    var ctrl;                   // ctrlKey
+    var alt;                    // altKey
 
     window.onmessage = evt => {
         if (evt.origin != origin || evt.data.extid != extid) return;
@@ -52,14 +53,87 @@ export default function(){
                 init();
                 break;
             case 'begin':
-                if (status == 0) ctrl = data.ctrl;
+                ctrl = false;
+                alt = false;
 
-                begin();
+                if (status == 0) {
+                    ctrl = data.ctrl;
+                    alt = data.alt;
+                }
+
+                if (getSelPages()) {
+                    begin();
+                }
+
                 break;
             default:
                 break;
         }
     };
+
+    var pagecount = 0;          // page count
+    var startp;                 // start page
+    var endp;                   // end page
+    var realcount;              // real page count
+
+    function getSelPages() {
+        if (alt) {
+            const inputpages = prompt(getMessage("promptpage"));
+            if (inputpages == null) {
+                return false;
+            }
+
+            var pagea = inputpages.split('-');
+
+            if (pagea.length == 1) {
+                pagea = inputpages.split(',');
+            }
+
+            if (pagea.length != 2) {
+                alert(getMessage("invalidinput"));
+                return false;
+            }
+
+            if (pagea[0].trim().length == 0) {
+                startp = 1;
+            }
+            else {
+                startp = Number(pagea[0]);
+
+                if (!Number.isInteger(startp)) {
+                    alert(getMessage("invalidinput"));
+                    return false;
+                }
+            }
+
+            if (pagea[1].trim().length == 0) {
+                endp = pagecount;
+            }
+            else {
+                endp = Number(pagea[1]);
+
+                if (!Number.isInteger(endp)) {
+                    alert(getMessage("invalidinput"));
+                    return false;
+                }
+            }
+
+            if (startp < 1) startp = 1;
+            if (endp > pagecount) endp = pagecount;
+
+            if (startp > endp) {
+                alert(getMessage("invalidinput"));
+                return false;
+            }
+        }
+        else {
+            startp = 1;
+            endp = pagecount;
+        }
+
+        realcount = endp - startp + 1;
+        return true;
+    }
 
     function loadScript(href) {
         console.log(`load script: ${href}`);
@@ -115,7 +189,6 @@ export default function(){
 
     var fileid = "";            // book basename
     var data = [];              // page urls
-    var pagecount = 0;          // page count
 
     function getBookInfo() {
         console.log('get book info');
@@ -235,7 +308,10 @@ export default function(){
 
     function getDownloadInfo() {
         scale = fromId('iadscaleid').value;
-        filename = fileid + '_' + scale + (ctrl ? '.zip' : '.pdf');
+        filename = fileid + '_';
+        filename += scale;
+        filename += alt ? `_${startp}_${endp}` : '';
+        filename += ctrl ? '.zip' : '.pdf';
     }
 
     async function download() {
@@ -344,11 +420,11 @@ export default function(){
     function initleaf() {
         jobs = new Queue();
 
-        Array(pagecount).fill().forEach((_, i) => {
-            jobs.enque({pageindex: i, tri: 0});
+        Array(realcount).fill().forEach((_, i) => {
+            jobs.enque({pageindex: i + startp - 1, tri: 0});
         });
 
-        jobcount = pagecount;
+        jobcount = realcount;
         complete = 0;
         paused = 0;
         recover = 0;
@@ -356,7 +432,7 @@ export default function(){
     }
 
     function getLeafs() {
-        console.log(`chunk number: ${pagecount}`);
+        console.log(`chunk number: ${realcount}`);
         startnotify();
         initleaf();
 
@@ -388,7 +464,10 @@ export default function(){
         if (++complete >= jobcount) {
             await clear();
             completenotify();
-            returnBook();
+
+            if (endp == pagecount) {
+                returnBook();
+            }
         }
         else {
             updatenotify();
@@ -597,7 +676,7 @@ export default function(){
         writer = await writable.getWriter();
 
         doc = new PDFDocument(writer, {
-            pagecount
+            realcount
             , info
         });
     }
@@ -608,7 +687,7 @@ export default function(){
 
     function createPDFDocSW() {
         doc = new PDFDocument(writer, {
-            pagecount
+            realcount
             , info
         });
     }

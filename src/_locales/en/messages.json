@@ -1,6 +1,8 @@
 {
     "description": { "message": "Download PDF books from archive.org" }
     , "title": { "message": "Internet Archive Downloader" }
+    , "promptpage": { "message": "Input page range (eg. 1-100):" }
+    , "invalidinput": { "message": "Invalid input." }
     , "alerterror": { "message": "$1.\nPlease contact the developer." }
     , "confirmabort": { "message": "To abort?" }
     , "download": { "message": "Download" }
