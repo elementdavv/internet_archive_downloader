@@ -61,79 +61,12 @@ export default function(){
                     alt = data.alt;
                 }
 
-                if (getSelPages()) {
-                    begin();
-                }
-
+                begin();
                 break;
             default:
                 break;
         }
     };
-
-    var pagecount = 0;          // page count
-    var startp;                 // start page
-    var endp;                   // end page
-    var realcount;              // real page count
-
-    function getSelPages() {
-        if (alt) {
-            const inputpages = prompt(getMessage("promptpage"));
-            if (inputpages == null) {
-                return false;
-            }
-
-            var pagea = inputpages.split('-');
-
-            if (pagea.length == 1) {
-                pagea = inputpages.split(',');
-            }
-
-            if (pagea.length != 2) {
-                alert(getMessage("invalidinput"));
-                return false;
-            }
-
-            if (pagea[0].trim().length == 0) {
-                startp = 1;
-            }
-            else {
-                startp = Number(pagea[0]);
-
-                if (!Number.isInteger(startp)) {
-                    alert(getMessage("invalidinput"));
-                    return false;
-                }
-            }
-
-            if (pagea[1].trim().length == 0) {
-                endp = pagecount;
-            }
-            else {
-                endp = Number(pagea[1]);
-
-                if (!Number.isInteger(endp)) {
-                    alert(getMessage("invalidinput"));
-                    return false;
-                }
-            }
-
-            if (startp < 1) startp = 1;
-            if (endp > pagecount) endp = pagecount;
-
-            if (startp > endp) {
-                alert(getMessage("invalidinput"));
-                return false;
-            }
-        }
-        else {
-            startp = 1;
-            endp = pagecount;
-        }
-
-        realcount = endp - startp + 1;
-        return true;
-    }
 
     function loadScript(href) {
         console.log(`load script: ${href}`);
@@ -189,6 +122,7 @@ export default function(){
 
     var fileid = "";            // book basename
     var data = [];              // page urls
+    var pagecount = 0;          // page count
 
     function getBookInfo() {
         console.log('get book info');
@@ -296,15 +230,80 @@ export default function(){
             readynotify();
         }
         else {
-            await clearwaitswfile();
-            getDownloadInfo();
-            console.log(`download ${filename} at ${new Date().toJSON().slice(0,19)}`);
-            download();
+            if (getSelPages()) {
+                await clearwaitswfile();
+                getDownloadInfo();
+                console.log(`download ${filename} at ${new Date().toJSON().slice(0,19)}`);
+                download();
+            }
         }
     };
 
-    var filename = "";          // filename to save
+    var startp = 1;             // start page
+    var endp = 100;             // end page
+    var realcount;              // real page count
+
+    function getSelPages() {
+        if (alt) {
+            const inputpages = prompt(getMessage("promptpage"), `${startp}-${endp}`);
+            if (inputpages == null) {
+                return false;
+            }
+
+            var pagea = inputpages.split('-');
+
+            if (pagea.length == 1) {
+                pagea = inputpages.split(',');
+            }
+
+            if (pagea.length != 2) {
+                alert(getMessage("invalidinput"));
+                return false;
+            }
+
+            if (pagea[0].trim().length == 0) {
+                startp = 1;
+            }
+            else {
+                startp = Number(pagea[0]);
+
+                if (!Number.isInteger(startp)) {
+                    alert(getMessage("invalidinput"));
+                    return false;
+                }
+            }
+
+            if (pagea[1].trim().length == 0) {
+                endp = pagecount;
+            }
+            else {
+                endp = Number(pagea[1]);
+
+                if (!Number.isInteger(endp)) {
+                    alert(getMessage("invalidinput"));
+                    return false;
+                }
+            }
+
+            if (startp < 1) startp = 1;
+            if (endp > pagecount) endp = pagecount;
+
+            if (startp > endp) {
+                alert(getMessage("invalidinput"));
+                return false;
+            }
+        }
+        else {
+            startp = 1;
+            endp = pagecount;
+        }
+
+        realcount = endp - startp + 1;
+        return true;
+    }
+
     var scale = 1;              // page scale
+    var filename = "";          // filename to save
 
     function getDownloadInfo() {
         scale = fromId('iadscaleid').value;
@@ -397,12 +396,18 @@ export default function(){
                 await createDoc();
             }
         } catch(e) {
+            // error from showSaveFilePicker
             const message = e.toString();
             console.log(message);
 
-            // user cancel in showSaveFilePicker
+            // SecurityError: Failed to execute 'showSaveFilePicker' on 'Window': Must be handling a user gesture to show a file picker.
+            if (e.code == 18) {
+                writer = null;
+                filehandle = null;
+            }
+            // DOMException: The user aborted a request.
             // streamSaver will always create temporary file
-            if (e.name != 'AbortError') {
+            if (e.code != 20) {
                 abortdoc({sync: sw, message});
             }
         };
@@ -467,6 +472,11 @@ export default function(){
 
             if (endp == pagecount) {
                 returnBook();
+            }
+            else {
+                startp += realcount;
+                endp += realcount;
+                if (endp > pagecount) endp = pagecount;
             }
         }
         else {
@@ -595,11 +605,13 @@ export default function(){
     }
 
     function createZIPPage(view, pageindex) {
+        pageindex++;
         const name = fileid + '_' + pageindex.toString().padStart(4, '0');
         doc.image({view, name});
     }
 
     function createPDFPage(view, pageindex, width, height) {
+        pageindex -= startp - 1;
         doc.addPage({
             pageindex
             , margin: 0
@@ -676,7 +688,7 @@ export default function(){
         writer = await writable.getWriter();
 
         doc = new PDFDocument(writer, {
-            realcount
+            pagecount: realcount
             , info
         });
     }
@@ -687,7 +699,7 @@ export default function(){
 
     function createPDFDocSW() {
         doc = new PDFDocument(writer, {
-            realcount
+            pagecount: realcount
             , info
         });
     }
