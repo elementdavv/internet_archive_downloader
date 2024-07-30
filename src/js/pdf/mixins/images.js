@@ -13,7 +13,7 @@ export default {
     return (this._imageCount = 0);
   },
 
-  image(src, x, y, options = {}) {
+  image(src, text, x, y, options = {}) {
     let image, left, left1;
     if (typeof x === 'object') {
       options = x;
@@ -51,10 +51,67 @@ export default {
     this.addContent(`/${image.label} Do`);
     this.restore();
 
+    if (text == null || text == '') return this;
+
+    this.opacity(0.0);
+    const xmldoc = new DOMParser().parseFromString(text, 'text/xml');
+    var xmlobject = xmldoc.getElementsByTagName('OBJECT');
+
+    if (xmlobject == null) {
+        return this;
+    }
+
+    const maxwidth = parseFloat(xmlobject[0].attributes['width'].value);
+    const maxheight = parseFloat(xmlobject[0].attributes['height'].value);
+    const xratio = w / maxwidth;
+    const yratio = h / maxheight;
+
+    // all paragraph in a page
+    const pars= xmldoc.querySelectorAll('PARAGRAPH');
+    var plh, words, coords, fontsize, lines, ly, wy, wx;
+
+    pars.forEach((par) => {
+        // line high in a paragraph
+        plh = [];
+        words = par.querySelectorAll('WORD');
+
+        words.forEach((word) => {
+            coords = word.attributes['coords'].value.split(',');
+            plh.push(parseFloat(coords[1]) - parseFloat(coords[3]));
+        });
+
+        plh.sort((a, b) => a - b);
+        // shared fontsize in a paragraph
+        fontsize = plh[Math.floor(0.85 * plh.length)] * yratio;
+        this.fontSize(fontsize);
+        lines = par.querySelectorAll('LINE');
+
+        lines.forEach((line) => {
+            // y position in a line
+            ly = [];
+            words = line.querySelectorAll('WORD');
+
+            words.forEach((word) => {
+                coords = word.attributes['coords'].value.split(',');
+                ly.push(parseFloat(coords[3]));
+            });
+
+            ly.sort((a, b) => a - b);
+            // shared y position in a line
+            wy = ly[Math.floor(0.15 * ly.length)] * yratio - fontsize * 0.15;
+
+            words.forEach((word) => {
+                coords = word.attributes['coords'].value.split(',');
+                wx = parseFloat(coords[0]) * xratio;
+                this.text(word.textContent, wx, wy);
+            });
+        });
+    });
+
     return this;
   },
 
-  image2(pageindex, src, x, y, options = {}) {
+  image2(pageindex, src, text, x, y, options = {}) {
     let image, left, left1;
     if (typeof x === 'object') {
       options = x;
@@ -97,6 +154,64 @@ export default {
     this.transform(w, 0, 0, -h, x, y + h);
     this.addContent(`/${image.label} Do`);
     this.restore();
+
+    if (text == null || text == '') return this;
+
+    this.opacity(0.0);
+    const xmldoc = new DOMParser().parseFromString(text, 'text/xml');
+    var divcoords = xmldoc.getElementsByTagName('div')[0].attributes['data-coords'];
+
+    if (divcoords == null) {
+        return this;
+    }
+
+    divcoords = divcoords.value.split(' ');
+    const maxwidth = parseFloat(divcoords[2]);
+    const maxheight = parseFloat(divcoords[3]);
+    const xratio = w / maxwidth;
+    const yratio = h / maxheight;
+
+    // all paragraph in a page
+    const pars= xmldoc.querySelectorAll('.ocr_par');
+    var plh, words, coords, fontsize, lines, ly, wy, wx;
+
+    pars.forEach((par) => {
+        // line high in a paragraph
+        plh = [];
+        words = par.querySelectorAll('.ocrx_word');
+
+        words.forEach((word) => {
+            coords = word.attributes['data-coords'].value.split(' ');
+            plh.push(parseFloat(coords[3]) - parseFloat(coords[1]));
+        });
+
+        plh.sort((a, b) => a - b);
+        // shared fontsize in a paragraph
+        fontsize = plh[Math.floor(0.85 * plh.length)] * yratio;
+        this.fontSize(fontsize);
+        lines = par.querySelectorAll('.ocr_line');
+
+        lines.forEach((line) => {
+            // y position in a line
+            ly = [];
+            words = line.querySelectorAll('.ocrx_word');
+
+            words.forEach((word) => {
+                coords = word.attributes['data-coords'].value.split(' ');
+                ly.push(parseFloat(coords[1]));
+            });
+
+            ly.sort((a, b) => a - b);
+            // shared y position in a line
+            wy = ly[Math.floor(0.15 * ly.length)] * yratio - fontsize * 0.15;
+
+            words.forEach((word) => {
+                coords = word.attributes['data-coords'].value.split(' ');
+                wx = parseFloat(coords[0]) * xratio;
+                this.text(word.textContent, wx, wy);
+            });
+        });
+    });
 
     return this;
   },

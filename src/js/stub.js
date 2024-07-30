@@ -15,6 +15,9 @@
         const br = {};
         br.reductionFactors = window.br.reductionFactors;
         br.bookId = window.br.bookId;
+        br.bookTitle = window.br.bookTitle;
+        br.bookPath = window.br.bookPath;
+        br.server = window.br.server;
         br.data = window.br.data.flat();
         return JSON.stringify(br);
     }

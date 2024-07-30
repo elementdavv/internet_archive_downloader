@@ -9,7 +9,10 @@ import PDFObject from './object.js';
 import PDFReference from './reference.js';
 import PDFPage from './page.js';
 import PDFSecurity from './security.js';
+import ColorMixin from './mixins/color.js';
 import VectorMixin from './mixins/vector.js';
+import FontsMixin from './mixins/fonts.js';
+import TextMixin from './mixins/text.js';
 import ImagesMixin from './mixins/images.js';
 import TBuf from '../utils/tbuf.js';
 
@@ -62,7 +65,10 @@ class PDFDocument {
     // The current page
     this.page = null;
 
+    this.initColor();
     this.initVector();
+    this.initFonts(options.fontdata, options.font);
+    this.initText();
     this.initImages();
 
     // Initialize the metadata
@@ -174,6 +180,12 @@ class PDFDocument {
     }
 
     this._info.end();
+
+    for (let name in this._fontFamilies) {
+      const font = this._fontFamilies[name];
+      font.finalize();
+    }
+
     this._root.end();
     this._root.data.Pages.end();
 
@@ -224,7 +236,10 @@ const mixin = methods => {
   Object.assign(PDFDocument.prototype, methods);
 };
 
+mixin(ColorMixin);
 mixin(VectorMixin);
+mixin(FontsMixin);
+mixin(TextMixin);
 mixin(ImagesMixin);
 
 export default PDFDocument;

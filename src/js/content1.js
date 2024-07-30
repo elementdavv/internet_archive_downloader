@@ -40,16 +40,15 @@ export default function(){
     var ctrl;                   // ctrlKey
     var alt;                    // altKey
 
-    window.onmessage = evt => {
+    window.onmessage = async evt => {
         if (evt.origin != origin || evt.data.extid != extid) return;
-
         const data = evt.data;
         console.log(`message: ${data.cmd}`);
 
         switch(data.cmd) {
             case 'init':
                 br = JSON.parse(data.br); 
-                init();
+                await init();
                 break;
             case 'begin':
                 ctrl = false;
@@ -84,20 +83,17 @@ export default function(){
     }
 
     function loadButton() {
-        const ab = fromClass('action-buttons-section');
-
-        if (ab.length == 0) return;
-
         console.log('load buttons');
-        ab[0].insertAdjacentHTML("afterbegin", buttonstring);
+        const iadlabel = document.getElementsByClassName('iadlabel');
+        if (iadlabel.length > 0) return;
+        const ab = fromClass('action-buttons-section');
+        ab[0]?.insertAdjacentHTML("afterbegin", buttonstring);
     }
 
     function loadScales() {
-        var s = fromId('iadscaleid');
-
-        if (!s) return;
-
         console.log('load scales');
+        var s = fromId('iadscaleid');
+        if (!s) return;
         const factors = br.reductionFactors;
         const star = "★★★★";
         var n = 0;
@@ -119,14 +115,25 @@ export default function(){
         });
     }
 
-    var fileid = "";            // book basename
-    var data = [];              // page urls
+    var fontdata = null;
+
+    async function loadFont() {
+        console.log('load font data');
+        const fonturl = chrome.runtime.getURL('/js/pdf/font/data/Georgia.afm');
+        const response = await fetch(fonturl);
+        fontdata = await response.text();
+    }
+
+    var fileid = '';            // book basename
+    var data = [];              // page image urls
+    var url2 = '';              // page text urls
     var pagecount = 0;          // page count
 
     function getBookInfo() {
         console.log('get book info');
         fileid = br.bookId;
         data = br.data;
+        url2 = `https://${br.server}/BookReader/BookReaderGetTextWrapper.php?path=${br.bookPath}_djvu.xml&mode=djvu_xml&page=`;
         pagecount = data.length;
     }
 
@@ -134,12 +141,7 @@ export default function(){
 
     function getMetadata() {
         console.log('get metadata');
-        const title = fromClass('item-title');
-
-        if (title.length > 0) {
-            info.Title = title[0].innerText;
-        }
-
+        info.Title = br.bookTitle;
         const meta = new Map();
         meta.set('by', 'Author');
         meta.set('Isbn', 'ISBN')
@@ -167,11 +169,12 @@ export default function(){
         progress = fromId('iadprogressid');
     }
 
-    function init(){
+    async function init(){
         console.log('init begin');
         loadCss("/css/iad.css");
         loadButton();
         loadScales();
+        await loadFont();
         getBookInfo();
         getMetadata();
         getProgress();
@@ -188,7 +191,6 @@ export default function(){
     if (sw) {
         chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             if (sender.id != chrome.runtime.id || (status != 1 && swaitcreate == false)) return;
-
             console.log(message);
 
             switch(message.cmd) {
@@ -397,7 +399,7 @@ export default function(){
         } catch(e) {
             // error from showSaveFilePicker
             const message = e.toString();
-            console.log(message);
+            console.log(e);
 
             // SecurityError: Failed to execute 'showSaveFilePicker' on 'Window': Must be handling a user gesture to show a file picker.
             if (e.code == 18) {
@@ -418,6 +420,7 @@ export default function(){
     var paused = 0;             // paused count
     var recover = 0;            // recover file
     var ac = null;              // AbortController
+    var content = [];           // book content for zip document
     const FILELIMIT = 6;        // parallel download limit
     const TRYLIMIT = 3;         // each leaf retry limit
 
@@ -433,6 +436,7 @@ export default function(){
         paused = 0;
         recover = 0;
         ac = new AbortController();
+        content = Array.from({length: realcount}, (v, i) => '');
     }
 
     function getLeafs() {
@@ -491,6 +495,10 @@ export default function(){
     }
 
     async function clear() {
+        if (ctrl) {
+            createZIPText();
+        }
+
         ac = null;
         doc.end();
         await writer.ready;
@@ -499,7 +507,6 @@ export default function(){
 
     function dispatch() {
         if (jobs.isEmpty) return;
-
         const job = jobs.deque();
         const pageindex = job.pageindex;
         const tri = job.tri;
@@ -507,12 +514,13 @@ export default function(){
         var uri = data[pageindex].uri;
         uri += uri.indexOf("?") > -1 ? "&" : "?";
         uri += `scale=${scale}&rotate=0`;
+        var uri2 = url2 + pageindex.toString();
         const width = Math.ceil(data[pageindex].width / scale);
         const height = Math.ceil(data[pageindex].height / scale);
-        syncfetch(pageindex, tri, uri, width, height);
+        syncfetch(pageindex, tri, uri, uri2, width, height);
     }
 
-    async function syncfetch(pageindex, tri, uri, width, height) {
+    async function syncfetch(pageindex, tri, uri, uri2, width, height) {
         try {
             const response = await fetch(uri, {
                 method: "GET",
@@ -521,22 +529,30 @@ export default function(){
                 signal: ac.signal,
             });
 
-            if (response.ok) {
-                const buffer = await response.arrayBuffer();
-
-                if (doc) {
-                    const view = new DataView(buffer);
-                    createPage(view, pageindex, width, height);
-                    nextLeaf();
-                }
-            }
-            else {
+            if (!response.ok) {
                 throw new Error(response.status);
             }
+
+            const buffer = await response.arrayBuffer();
+            const view = new DataView(buffer);
+
+            const response2 = await fetch(uri2, {
+                method: "GET",
+                credentials: "include",
+                signal: ac.signal,
+            });
+
+            if (!response2.ok) {
+                throw new Error(response2.status);
+            }
+
+            var text = await response2.text();
+            createPage(view, text, pageindex, width, height);
+            nextLeaf();
         }
         catch(e) {
             const message = e.toString();
-            console.log(message);
+            console.log(e);
 
             if (!ac.signal.aborted) {
                 // chrome: failed to fetch
@@ -592,24 +608,32 @@ export default function(){
         }
     }
 
-    function createPage(view, pageindex, width, height) {
+    function createPage(view, text, pageindex, width, height) {
         console.log(`chunk ${pageindex} ready`);
 
         if (ctrl) {
-            createZIPPage(view, pageindex);
+            createZIPPage(view, text, pageindex);
         }
         else {
-            createPDFPage(view, pageindex, width, height);
+            createPDFPage(view, text, pageindex, width, height);
         }
     }
 
-    function createZIPPage(view, pageindex) {
+    function createZIPPage(view, text, pageindex) {
+        content[pageindex - startp + 1] = text;
         pageindex++;
         const name = fileid + '_' + pageindex.toString().padStart(4, '0');
         doc.image({view, name});
     }
 
-    function createPDFPage(view, pageindex, width, height) {
+    function createZIPText() {
+        const uint8 = new TextEncoder().encode(getContent());
+        const view = new DataView(uint8.buffer);
+        const name = fileid + '.txt';
+        doc.image({view, name});
+    }
+
+    function createPDFPage(view, text, pageindex, width, height) {
         pageindex -= startp - 1;
         doc.addPage({
             pageindex
@@ -617,12 +641,12 @@ export default function(){
             , size: [width, height]
         });
 
-        doc.image(view, 0, 0);
+        doc.image(view, text, 0, 0);
     }
 
     var filehandle = null;      // filesystemfilehandle
     var writer = null;          // file stream writer
-    var doc = null;             // pdf document object
+    var doc = null;             // pdf/zip document object
 
     async function createDoc() {
         if (ctrl) {
@@ -689,6 +713,8 @@ export default function(){
         doc = new PDFDocument(writer, {
             pagecount: realcount
             , info
+            , fontdata
+            , font: 'Times-Roman'
         });
     }
 
@@ -700,7 +726,42 @@ export default function(){
         doc = new PDFDocument(writer, {
             pagecount: realcount
             , info
+            , fontdata
+            , font: 'Times-Roman'
         });
+    }
+
+    function getContent() {
+        var result = '', xmldoc, pars, page, lines, words, t;
+
+        content.forEach((text) => {
+            xmldoc = new DOMParser().parseFromString(text, 'text/xml');
+            pars= xmldoc.querySelectorAll('PARAGRAPH');
+            page = '';
+
+            pars.forEach((par) => {
+                lines = par.querySelectorAll('LINE');
+
+                lines.forEach((line) => {
+                    words = line.querySelectorAll('WORD');
+                    t = '';
+
+                    words.forEach((word) => {
+                        if (t != '') t += ' ';
+                        t += word.textContent;
+                    });
+
+                    page += t + '\n';
+                });
+
+                page += '\n';
+            });
+
+            if (result != '') result += '\n';
+            result += page;
+        });
+
+        return result;
     }
 
     function returnBook() {

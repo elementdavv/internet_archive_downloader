@@ -6,7 +6,7 @@
  */
 
 import JPEG from './image/jpeg.js';
-import PNGImage from "./image/png.js";
+import PNGImage from './image/png.js';
 
 class PDFImage {
   static open(src, label) {

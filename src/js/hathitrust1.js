@@ -1,5 +1,5 @@
 /*
- * content1.js
+ * hathitrust1.js
  * Copyright (C) 2023 Element Davv<elementdavv@hotmail.com>
  *
  * Distributed under terms of the GPL3 license.
@@ -17,15 +17,16 @@ export default function(){
     const extid = chrome.runtime.getURL('').match(/[\-0-9a-z]+/g)[1];   // extension host
     const sw = !window.showSaveFilePicker;                              // is use service worker
     const ff = /Firefox/.test(navigator.userAgent);                     // is firefox
+    const buttonid = `${(new Date()).getTime()}-${Math.ceil(Math.random() * 1e3)}`;
 
     const buttonstring = `
 <div class='accordion-item null panel svelte-g6tm5k'>
-    <h2 class='accordion-header' id='h1703477325693-198'>
-        <button class='accordion-button svelte-g6tm5k collapsed' type='button' data-bs-toggle='collapse' data-bs-target='#c1703477325693-198' aria-expanded='false' aria-controls='c1703477325693-198'>
+    <h2 class='accordion-header' id='h${buttonid}'>
+        <button class='accordion-button svelte-g6tm5k collapsed' type='button' data-bs-toggle='collapse' data-bs-target='#c${buttonid}' aria-expanded='false' aria-controls='c${buttonid}'>
             <div class='d-flex gap-2 align-items-center me-1'><i class='fa-solid fa-hippo' slot='icon'></i>Ayesha</div>
         </button>
     </h2>
-    <div id='c1703477325693-198' class='accordion-collapse collapse' aria-labelledby='h1703477325693-198' data-bs-parent='#controls' style>
+    <div id='c${buttonid}' class='accordion-collapse collapse' aria-labelledby='h${buttonid}' data-bs-parent='#controls' style>
         <div class='accordion-body'>
             <div class="d-flex gap-4 align-items-center">
             <fieldset class='mb-3'>
@@ -62,16 +63,15 @@ export default function(){
     var ctrl;                   // ctrlKey
     var alt;                    // altKey
 
-    window.onmessage = evt => {
+    window.onmessage = async evt => {
         if (evt.origin != origin || evt.data.extid != extid) return;
-
         const data = evt.data;
         console.log(`message: ${data.cmd}`);
 
         switch(data.cmd) {
             case 'init':
                 br = JSON.parse(data.manifest); 
-                init();
+                await init();
                 break;
             case 'begin':
                 ctrl = false;
@@ -106,43 +106,49 @@ export default function(){
     }
 
     function loadButton() {
-        const ac = fromId('controls')?.getElementsByClassName("border-top");
-
-        if (ac.length == 0) return;
-
         console.log('load buttons');
-        ac[0].insertAdjacentHTML("afterend", buttonstring);
+        const ayesha = document.getElementsByClassName('me-1')[1]?.textContent;
+        if (ayesha == 'Ayesha') return;
+        const ac = fromId('controls')?.getElementsByClassName("border-top");
+        ac[0]?.insertAdjacentHTML("afterend", buttonstring);
     }
 
     function loadScales() {
-        var s = fromId('iadscaleid');
-
-        if (!s) return;
-
         console.log('load scales');
+        var s = fromId('iadscaleid');
+        if (!s) return;
         var n = 3;
 
         while (n > 0) {
             const o = document.createElement('option');
             const v = n * br.defaultImage.height;
             o.value = 'height=' + v;
-            o.innerText = 'high: ' + v;
-
+            o.innerText = 'height: ' + v;
             if (n == 3) o.selected = true;
-
             s.appendChild(o);
             n--;
         }
     }
 
+    var fontdata = null;
+
+    async function loadFont() {
+        console.log('load font data');
+        const fonturl = chrome.runtime.getURL('/js/pdf/font/data/Georgia.afm');
+        const response = await fetch(fonturl);
+        fontdata = await response.text();
+    }
+
     var fileid = '';            // book basename
-    var url = '';               // page urls
+    var url = '';               // page image urls
+    var url2 = '';              // page text urls
     var pagecount = 0;          // page count
 
     function getBookInfo() {
         console.log('get book info');
         fileid = br.id.replace(/[^a-zA-Z0-9_]/g, '_');
         url = 'https://babel.hathitrust.org/cgi/imgsrv/image?id=' + br.id;
+        url2 = 'https://babel.hathitrust.org/cgi/imgsrv/html?id=' + br.id;
         pagecount = br.totalSeq;
     }
 
@@ -164,11 +170,12 @@ export default function(){
         progress = fromId('iadprogressid');
     }
 
-    function init(){
+    async function init(){
         console.log('init begin');
         loadCss("/css/iad.css");
         loadButton();
         loadScales();
+        await loadFont();
         getBookInfo();
         getMetadata();
         getProgress();
@@ -185,7 +192,6 @@ export default function(){
     if (sw) {
         chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             if (sender.id != chrome.runtime.id || (status != 1 && swaitcreate == false)) return;
-
             console.log(message);
 
             switch(message.cmd) {
@@ -301,7 +307,7 @@ export default function(){
         return true;
     }
 
-    var scale = "";             // page scale
+    var scale = '';             // page scale
     var tasks = 6;              // parallel tasks
     var filename = "";          // filename to save
 
@@ -399,7 +405,7 @@ export default function(){
         } catch(e) {
             // error from showSaveFilePicker
             const message = e.toString();
-            console.log(message);
+            console.log(e);
 
             // SecurityError: Failed to execute 'showSaveFilePicker' on 'Window': Must be handling a user gesture to show a file picker.
             if (e.code == 18) {
@@ -420,6 +426,7 @@ export default function(){
     var paused = 0;             // paused count
     var recover = 0;            // recover file
     var ac = null;              // AbortController
+    var content = [];           // book content for zip document
     var waitInterval = null;    // wait for too many request
     const TRYLIMIT = 3;         // each leaf retry limit
 
@@ -435,6 +442,7 @@ export default function(){
         paused = 0;
         recover = 0;
         ac = new AbortController();
+        content = Array.from({length: realcount}, (v, i) => '');
         waitInterval = null;
     }
 
@@ -517,6 +525,10 @@ export default function(){
     }
 
     async function clear() {
+        if (ctrl) {
+            createZIPText();
+        }
+
         ac = null;
         doc.end();
         await writer.ready;
@@ -525,16 +537,16 @@ export default function(){
 
     function dispatch() {
         if (jobs.isEmpty) return;
-
         const job = jobs.deque();
         const pageindex = job.pageindex;
         const tri = job.tri;
         console.log(`chunk ${pageindex}`);
         var uri = url + `&seq=` + (pageindex + br.firstPageSeq) + '&' + scale;
-        syncfetch(pageindex, tri, uri);
+        var uri2 = url2 + `&seq=` + (pageindex + br.firstPageSeq);
+        syncfetch(pageindex, tri, uri, uri2);
     }
 
-    async function syncfetch(pageindex, tri, uri) {
+    async function syncfetch(pageindex, tri, uri, uri2) {
         try {
             const response = await fetch(uri, {
                 method: "GET",
@@ -543,22 +555,30 @@ export default function(){
                 signal: ac.signal,
             });
 
-            if (response.ok) {
-                const buffer = await response.arrayBuffer();
-
-                if (doc) {
-                    const view = new DataView(buffer);
-                    createPage(view, pageindex);
-                    nextLeaf();
-                }
-            }
-            else {
+            if (!response.ok) {
                 throw new Error(response.status);
             }
+
+            const buffer = await response.arrayBuffer();
+            const view = new DataView(buffer);
+
+            const response2 = await fetch(uri2, {
+                method: "GET",
+                credentials: "include",
+                signal: ac.signal,
+            });
+
+            if (!response2.ok) {
+                throw new Error(response2.status);
+            }
+
+            var text = await response2.text();
+            createPage(view, text, pageindex);
+            nextLeaf();
         }
         catch(e) {
             const message = e.toString();
-            console.log(message);
+            console.log(e);
 
             if (!ac.signal.aborted) {
                 // chrome: failed to fetch
@@ -620,31 +640,39 @@ export default function(){
         }
     }
 
-    function createPage(view, pageindex) {
+    function createPage(view, text, pageindex) {
         console.log(`chunk ${pageindex} ready`);
 
         if (ctrl) {
-            createZIPPage(view, pageindex);
+            createZIPPage(view, text, pageindex);
         }
         else {
-            createPDFPage(view, pageindex);
+            createPDFPage(view, text, pageindex);
         }
     }
 
-    function createZIPPage(view, pageindex) {
+    function createZIPPage(view, text, pageindex) {
+        content[pageindex - startp + 1] = text;
         pageindex++;
         const name = fileid + '_' + pageindex.toString().padStart(4, '0');
         doc.image({view, name});
     }
 
-    function createPDFPage(view, pageindex) {
+    function createZIPText() {
+        const uint8 = new TextEncoder().encode(getContent());
+        const view = new DataView(uint8.buffer);
+        const name = fileid + '.txt';
+        doc.image({view, name});
+    }
+
+    function createPDFPage(view, text, pageindex) {
         pageindex -= startp - 1;
-        doc.image2(pageindex, view, 0, 0);
+        doc.image2(pageindex, view, text, 0, 0);
     }
 
     var filehandle = null;      // filesystemfilehandle
     var writer = null;          // file stream writer
-    var doc = null;             // pdf document object
+    var doc = null;             // pdf/zip document object
 
     async function createDoc() {
         if (ctrl) {
@@ -711,6 +739,8 @@ export default function(){
         doc = new PDFDocument(writer, {
             pagecount: realcount
             , info
+            , fontdata
+            , font: 'Times-Roman'
         });
     }
 
@@ -722,7 +752,42 @@ export default function(){
         doc = new PDFDocument(writer, {
             pagecount: realcount
             , info
+            , fontdata
+            , font: 'Times-Roman'
         });
+    }
+
+    function getContent() {
+        var result = '', xmldoc, pars, page, lines, words, t;
+
+        content.forEach((text) => {
+            xmldoc = new DOMParser().parseFromString(text, 'text/xml');
+            pars= xmldoc.querySelectorAll('.ocr_par');
+            page = '';
+
+            pars.forEach((par) => {
+                lines = par.querySelectorAll('.ocr_line');
+
+                lines.forEach((line) => {
+                    words = line.querySelectorAll('.ocrx_word');
+                    t = '';
+
+                    words.forEach((word) => {
+                        if (t != '') t += ' ';
+                        t += word.textContent;
+                    });
+
+                    page += t + '\n';
+                });
+
+                page += '\n';
+            });
+
+            if (result != '') result += '\n';
+            result += page;
+        });
+
+        return result;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////

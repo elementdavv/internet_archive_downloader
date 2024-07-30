@@ -4,11 +4,11 @@
 
 [HathiTrust Digital Library](https://hathitrust.org) is also supported. All books with full view permission can be downloaded.
 
-The extension works by fetching every leaf of a book, constructing a PDF stream on the fly targeting to disk storage. So it consumes only a little RAM resource and can handle books of thousands of leafs easily.
+The extension works by fetching every leaf of a book, constructing a PDF stream on the fly targeting to disk storage. So it can handle books of thousands of leafs easily with little memory.
 
-## Features
-* Download a book as a PDF file
-* Download a book as a collection of image files (JPEG/PNG) one for each leaf
+## What It Can Do
+* Download a book as a PDF file With text embedded
+* Download a book as a collection of image files (JPEG/PNG) one for each leaf, and the text of the book
 * Optional leaf range
 * Optional leaf quality
 * Download multiple books in parallel
@@ -63,7 +63,6 @@ The download process may take some breaks due to server constraints.
 ## Availability
 * Chromium family(Chrome, Edge, Brave, Vivaldi, Opera, Yandex, Kiwi, etc) version 90+ supported
 * Firefox version 115+ supported
-* For Brave below version 1.67.119, item 'File System Access API' on the 'brave://flags' page should be enabled.
 
 ## License
 [GPL3](LICENSE) ©Element Davv
@@ -71,4 +70,4 @@ The download process may take some breaks due to server constraints.
 Any questions and/or suggestions are appreciatiated.
 
 ## Donation
-If you found the extension helpful consider supporting me with a coffee <a href='https://www.buymeacoffee.com/timelegend' target='_blank'><img src='resources/logo/bmc-orange.png' style='width:100px;height:28px'></a>.
+If you found the extension helpful consider buy a cup of coffee supporting the proceeding development<a href='https://www.buymeacoffee.com/timelegend' target='_blank'><img src='resources/logo/bmc-orange.png' style='width:100px;height:28px'></a>.
