@@ -1,3 +1,20 @@
+<h1>
+Bad news for all
+</h1>
+The extension has just been removed from Chrome WebStore, for the reason:
+
+```
+Providing unauthorized access, download, or streaming of copyrighted content or media in the following site(s):
+
+  * archive.org
+
+    * Downloading borrowed limited period books
+```
+
+Nevertheless, the extension is still work. And Microsoft Store and Mozilla Store are still available. It is not banned there may be because it is not popular now in their community (User number at Chrome WebStore had reached 55.000 yestoday). But I don't know how long it could survive.
+
+So, you need to save the page link in case of lost. Or click "Watch" button to receive notification for further updates.
+
 # Internet Archive Downloader
 
 [Internet Archive](https://archive.org) holds more than 34 millions books. Some books are permitted to read online by borrowing for a limit period. With the extension, the borrowed books can be downloaded for offline reading.
@@ -7,7 +24,7 @@
 The extension works by fetching every leaf of a book, constructing a PDF stream on the fly targeting to disk storage. So it can handle books of thousands of leafs easily with little memory.
 
 ## What It Can Do
-* Download a book as a PDF file With text embedded
+* Download a book as a PDF file with text embedded
 * Download a book as a collection of image files (JPEG/PNG) one for each leaf, and the text of the book
 * Optional leaf range
 * Optional leaf quality
@@ -70,4 +87,4 @@ The download process may take some breaks due to server constraints.
 Any questions and/or suggestions are appreciatiated.
 
 ## Donation
-If you found the extension helpful consider buy a cup of coffee supporting the proceeding development<a href='https://www.buymeacoffee.com/timelegend' target='_blank'><img src='resources/logo/bmc-orange.png' style='width:100px;height:28px'></a>.
+If you found the extension helpful consider buying a coffee to support the continuing development<a href='https://www.buymeacoffee.com/timelegend' target='_blank'><img src='resources/logo/bmc-orange.png' style='width:100px;height:28px'></a>.
