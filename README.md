@@ -1,20 +1,3 @@
-<h1>
-Bad news for all
-</h1>
-The extension has just been removed from Chrome WebStore, for the reason:
-
-```
-Providing unauthorized access, download, or streaming of copyrighted content or media in the following site(s):
-
-  * archive.org
-
-    * Downloading borrowed limited period books
-```
-
-Nevertheless, the extension is still work. And Microsoft Store and Mozilla Store are still available. It is not banned there may be because it is not popular now in their community (User number at Chrome WebStore had reached 55.000 yestoday). But I don't know how long it could survive.
-
-So, you need to save the page link in case of lost. Or click "Watch" button to receive notification for further updates.
-
 # Internet Archive Downloader
 
 [Internet Archive](https://archive.org) holds more than 34 millions books. Some books are permitted to read online by borrowing for a limit period. With the extension, the borrowed books can be downloaded for offline reading.
@@ -41,7 +24,6 @@ For Firefox:
 * Grant all Optional permissions in the Permissions tab of the extension detail page.
 
 Alternatively, install automatically from their repositories:
-- [Chrome WebStore](https://chrome.google.com/webstore/detail/internet-archive-download/keimonnoakgkpnifppoomfdlkadghkjb)
 - [Edge Addons](https://microsoftedge.microsoft.com/addons/detail/internet-archive-download/cnpoedgimjaecinmgfnfhfmcpcngeeje)
 - [Mozilla Addons (Firefox)](https://addons.mozilla.org/en-US/firefox/addon/internet_archive_downloader/) (All Optional permissions must be granted as well)
 
@@ -81,8 +63,11 @@ The download process may take some breaks due to server constraints.
 * Chromium family(Chrome, Edge, Brave, Vivaldi, Opera, Yandex, Kiwi, etc) version 90+ supported
 * Firefox version 115+ supported
 
+## Disclaimer
+The project is for study purpose only. Users should recognize that downloading borrowed limited period books is prohibited. All books downloaded using this project should be deleted within 48 hours. The project is provided on an "as is" basis. Use of the project is at user's own risk. The owner does not guarantee or assume responsibility for any damages to user's computer system, mobile device, loss of data or legal risks that results from using the project.
+
 ## License
-[GPL3](LICENSE) ©Element Davv
+[AGPL3](LICENSE) ©Element Davv
 
 Any questions and/or suggestions are appreciatiated.
 
