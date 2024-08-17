@@ -1,8 +1,8 @@
 # Internet Archive Downloader
 
-[Internet Archive](https://archive.org) holds more than 34 millions books. Some books are permitted to read online by borrowing for a limit period. With the extension, the borrowed books can be downloaded for offline reading.
+In [Internet Archive](https://archive.org), Some books can be borrowed to read online for a limited period. The extension will try to download these books.
 
-[HathiTrust Digital Library](https://hathitrust.org) is also supported. All books with full view permission can be downloaded.
+In [HathiTrust Digital Library](https://hathitrust.org). books with full view permission is also supported.
 
 The extension works by fetching every leaf of a book, constructing a PDF stream on the fly targeting to disk storage. So it can handle books of thousands of leafs easily with little memory.
 
@@ -72,4 +72,4 @@ The project is for study purpose only. Users should recognize that downloading b
 Any questions and/or suggestions are appreciatiated.
 
 ## Donation
-If you found the extension helpful consider buying a coffee to support the continuing development<a href='https://www.buymeacoffee.com/timelegend' target='_blank'><img src='resources/logo/bmc-orange.png' style='width:100px;height:28px'></a>.
+If you want to support my work you could buy a coffee <a href='https://www.buymeacoffee.com/timelegend' target='_blank'><img src='resources/logo/bmc-orange.png' style='width:100px;height:28px'></a>.
