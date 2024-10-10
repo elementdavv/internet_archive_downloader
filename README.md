@@ -73,4 +73,4 @@ The project is for study purpose only. Users should recognize that downloading b
 Any questions and/or suggestions are appreciatiated.
 
 ## Donation
-If you want to support my work you could donate some coins. [![donate](resources/pp-logo.png)](https://paypal.me/timelegend)
+If you want to support my work you could donate some coins. [![donate](resources/logo/paypal-logo.png)](https://paypal.me/timelegend)
