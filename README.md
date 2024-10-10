@@ -23,7 +23,8 @@ For Firefox:
 * Drop the package from file manager to Extensions page on your browser.
 * Grant all Optional permissions in the Permissions tab of the extension detail page.
 
-Alternatively, install automatically from their repositories:
+Alternatively, install automatically from Browsers repositories:
+- Chrome WebStore (Taken down)
 - [Edge Addons](https://microsoftedge.microsoft.com/addons/detail/internet-archive-download/cnpoedgimjaecinmgfnfhfmcpcngeeje)
 - [Mozilla Addons (Firefox)](https://addons.mozilla.org/en-US/firefox/addon/internet_archive_downloader/) (All Optional permissions must be granted as well)
 
@@ -45,7 +46,7 @@ After borrowing a book, two new buttons, "Quality" and "Download", appear under 
 
 <image src="resources/capture/download1.png">
 
-After successful downloads, the book will be returned automatically for availability to other users.
+On successful downloads, the book will be returned automatically for availability to other users.
 
 ### HathiTrust:
 No login, no borrows required. In [hathitrust.org](https://hathitrust.org), for books with full view permission, a new section, "Ayesha", appears above the "Download" section on the left-hand side of the page. The section contains three buttons, "Quality", "Tasks" and "Download".
@@ -72,4 +73,4 @@ The project is for study purpose only. Users should recognize that downloading b
 Any questions and/or suggestions are appreciatiated.
 
 ## Donation
-If you want to support my work you could buy a coffee <a href='https://www.buymeacoffee.com/timelegend' target='_blank'><img src='resources/logo/bmc-orange.png' style='width:100px;height:28px'></a>.
+If you want to support my work you could donate some coins. [![donate](resources/pp-logo.png)](https://paypal.me/timelegend)
