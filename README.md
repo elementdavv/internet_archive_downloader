@@ -20,11 +20,11 @@ The extension works by fetching every leaf of a book, constructing a PDF stream 
 * Due to the install restriction of Chrome with extensions which are not from Chrome WebStore, take the following steps:
     * Windows: Download registry file [windows.reg](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/windows.reg). Double click to run it. The file will allow the Internet Archive Downloader extension CRX file to install in Chrome, Edge, Brave and Vivaldi browser.
 
-    * Mac OS: Download policy file [Chrome](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/com.google.Chrome.mobileconfig) / [Edge](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/com.microsoft.Edge.mobileconfig) / [Brave](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/com.brave.Browser.mobileconfig), each for their corresponding browser. Double click a profile to run it. Then from System Preferences (or System Settings) find the item of "Profile" (it may be in current page, or inside "General", "Security and Privacy" item, dependent of MacOS version). In "Profile" setting page, click "install" button for individual profile. The profiles will allow the Internet Archive Downloader extension CRX file to install in Chrome, Edge and Brave browser.
+    * Mac OS: Download policy file [Chrome](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/com.google.Chrome.mobileconfig) / [Edge](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/com.microsoft.Edge.mobileconfig) / [Brave](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/com.brave.Browser.mobileconfig), each for their corresponding browser. Double click a profile to run it. Then from System Preferences (or System Settings) find the item of "Profile" (it may be in current page, or inside "General", "Security and Privacy" item, dependent of Mac OS version). In "Profile" setting page, click "install" button for individual profile. The profiles will allow the Internet Archive Downloader extension CRX file to install in Chrome, Edge and Brave browser.
 
     * Linux: Supported by default.
 
-    * The installed extension supports automatic updates.
+* The installed extension supports automatic updates.
 
 ### For Firefox:
 * Grab the latest package (.xpi) in the [releases](https://github.com/elementdavv/internet_archive_downloader/releases) page.
@@ -36,7 +36,7 @@ The extension works by fetching every leaf of a book, constructing a PDF stream 
 - [Mozilla Addons (Firefox)](https://addons.mozilla.org/en-US/firefox/addon/internet_archive_downloader/)
 
 ## Configuration
-In Firefox, permissions of accesses to relative websites must be granted in the "Permissions" tab of the extension detail page.
+In Firefox, permissions of access to relative websites must be granted in the "Permissions" tab of the extension detail page.
 
 ## Usage
 ### Internet Archive:
