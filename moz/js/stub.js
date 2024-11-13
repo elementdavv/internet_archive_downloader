@@ -19,6 +19,7 @@
         br.bookPath = window.br.bookPath;
         br.server = window.br.server;
         br.data = window.br.data.flat();
+        br.protected = window.br.protected;
         return JSON.stringify(br);
     }
 
@@ -37,8 +38,7 @@
             r = 0;
         }
         else if (!window.br.protected) {
-            console.log('book always available, quit');
-            r = 1;
+            ;
         }
         else if (!window.br.options.lendingInfo.loanId) {
             console.log('book not borrowed yet, quit');

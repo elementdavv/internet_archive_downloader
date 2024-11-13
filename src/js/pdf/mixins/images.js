@@ -51,13 +51,13 @@ export default {
     this.addContent(`/${image.label} Do`);
     this.restore();
 
-    if (text == null || text == '') return this;
+    if (text == null || text == '' || text.indexOf('OBJECT') == -1) return this;
 
     this.opacity(0.0);
     const xmldoc = new DOMParser().parseFromString(text, 'text/xml');
     var xmlobject = xmldoc.getElementsByTagName('OBJECT');
 
-    if (xmlobject == null) {
+    if (xmlobject == null || xmlobject.length == 0) {
         return this;
     }
 

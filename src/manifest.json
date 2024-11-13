@@ -4,8 +4,9 @@
     , "description": "__MSG_description__"
     , "homepage_url": "https://github.com/elementdavv/internet_archive_downloader"
     , "name": "Internet Archive Downloader"
-    , "version": "0.8.0"
+    , "version": "1.0.0"
     , "default_locale": "en"
+    , "update_url": "https://elementdavv.github.io/iad/updates.xml"
     , "icons": {
         "128": "images/logo128.png"
     }
@@ -14,6 +15,7 @@
             "128": "images/logo128.png"
         }
         , "default_title": "__MSG_title__"
+        , "default_popup": "page/popup.html"
     }
     , "background": {
         "service_worker": "js/bg.js"
@@ -27,7 +29,9 @@
         , "tabs"
     ]
     , "host_permissions": [
-        "\u003Call_urls>"
+        "https://archive.org/*"
+        , "*://*.us.archive.org/*"
+        , "https://babel.hathitrust.org/*"
     ]
     , "web_accessible_resources": [{
         "resources": [

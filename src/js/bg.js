@@ -8,30 +8,6 @@
 (() => {
     'use strict';
 
-    chrome.action.onClicked.addListener(async tab => {
-        const origin = 'https://archive.org';
-        const detail = 'https://archive.org/details';
-        const detail2 = 'https://babel.hathitrust.org/cgi/pt';
-        const js = 'js/content.js';
-        const js2 = 'js/hathitrust.js';
-        const dnr = await loadDnr();
-
-        if (tab.url.indexOf(detail2) > -1) {
-            injectjs(tab.id, js2);
-        }
-        else if (dnr == 0) {
-            console.log('Internet Archive unsupported');
-        }
-        // on old kiwi, tabs update complete event not triggered, to work from here
-        // or in case of slow network, buttons not shown
-        else if (tab.url.indexOf(detail) > -1) {
-            injectjs(tab.id, js);
-        }
-        else if (tab.url.indexOf(origin) == -1) {
-            chrome.tabs.create({url: origin});
-        }
-    });
-
     chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         const detail = 'https://archive.org/details';
         const detail2 = 'https://babel.hathitrust.org/cgi/pt';

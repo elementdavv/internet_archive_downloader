@@ -1,0 +1,40 @@
+html, body {
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size: 14px;
+    padding: 0;
+    margin: 0;
+    background-color: #303030;
+}
+body {
+    min-width: 12em;
+}
+
+.iad-nav {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.iad-nav-item {
+    display: block;
+    margin: 2px 0;
+}
+.iad-nav-item > div, a {
+    display: block;
+    padding: 5px 25px 5px 15px;
+    border-radius: 4px;
+    line-height: 1.5em;
+    font-size: 1em;
+    color: #eee;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.iad-nav-item > div:hover, a:hover {
+    text-decoration: none;
+    background-color: #404040;
+}
+.iad-divider {
+    height: 1px;
+    overflow: hidden;
+    background-color: #505050;
+}

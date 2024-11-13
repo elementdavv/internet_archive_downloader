@@ -13,20 +13,30 @@ The extension works by fetching every leaf of a book, constructing a PDF stream 
 * Optional leaf quality
 * Download multiple books in parallel
 
-## Install
-For Chrome, Edge, Brave, etc:
+## Install manually
+### For Chrome, Edge, Brave, etc:
 * Grab the latest package (.crx) in the [releases](https://github.com/elementdavv/internet_archive_downloader/releases) page.
 * Drop the package from file manager to Extension Manager page on your browser (developer mode must be enabled).
+* Due to the install restriction of Chrome with extensions which are not from Chrome WebStore, take the following steps:
+    * Windows: Download registry file [windows.reg](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/windows.reg). Double click to run it. The file will allow the Internet Archive Downloader extension CRX file to install in Chrome, Edge, Brave and Vivaldi browser.
 
-For Firefox:
+    * Mac OS: Download policy file [Chrome](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/com.google.Chrome.mobileconfig) / [Edge](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/com.microsoft.Edge.mobileconfig) / [Brave](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/com.brave.Browser.mobileconfig), each for their corresponding browser. Double click a profile to run it. Then from System Preferences (or System Settings) find the item of "Profile" (it may be in current page, or inside "General", "Security and Privacy" item, dependent of MacOS version). In "Profile" setting page, click "install" button for individual profile. The profiles will allow the Internet Archive Downloader extension CRX file to install in Chrome, Edge and Brave browser.
+
+    * Linux: Supported by default.
+
+    * The installed extension supports automatic updates.
+
+### For Firefox:
 * Grab the latest package (.xpi) in the [releases](https://github.com/elementdavv/internet_archive_downloader/releases) page.
-* Drop the package from file manager to Extensions page on your browser.
-* Grant all Optional permissions in the Permissions tab of the extension detail page.
+* Drop the package from file manager to Extensions page on Firefox.
 
-Alternatively, install automatically from Browsers repositories:
+## Install automatically
 - Chrome WebStore (Taken down)
 - [Edge Addons](https://microsoftedge.microsoft.com/addons/detail/internet-archive-download/cnpoedgimjaecinmgfnfhfmcpcngeeje)
-- [Mozilla Addons (Firefox)](https://addons.mozilla.org/en-US/firefox/addon/internet_archive_downloader/) (All Optional permissions must be granted as well)
+- [Mozilla Addons (Firefox)](https://addons.mozilla.org/en-US/firefox/addon/internet_archive_downloader/)
+
+## Configuration
+In Firefox, permissions of accesses to relative websites must be granted in the "Permissions" tab of the extension detail page.
 
 ## Usage
 ### Internet Archive:
@@ -61,8 +71,11 @@ No login, no borrows required. In [hathitrust.org](https://hathitrust.org), for 
 The download process may take some breaks due to server constraints.
 
 ## Availability
-* Chromium family(Chrome, Edge, Brave, Vivaldi, Opera, Yandex, Kiwi, etc) version 90+ supported
+* Chromium family(Chrome, Chromium, Edge, Brave, Vivaldi, Opera, Yandex, Kiwi, etc) version 90+ supported
 * Firefox version 115+ supported
+
+## Privacy
+[Extension Privacy Policy](Privacy.md)
 
 ## Disclaimer
 The project is for study purpose only. Users should recognize that downloading borrowed limited period books is prohibited. All books downloaded using this project should be deleted within 48 hours. The project is provided on an "as is" basis. Use of the project is at user's own risk. The owner does not guarantee or assume responsibility for any damages to user's computer system, mobile device, loss of data or legal risks that results from using the project.

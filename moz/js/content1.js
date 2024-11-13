@@ -766,6 +766,7 @@ export default function(){
     }
 
     function returnBook() {
+        if (!br.protected) return;
         console.log('return the book.');
         const uri = 'https://archive.org/services/loans/loan';
         const formdata = new FormData();
