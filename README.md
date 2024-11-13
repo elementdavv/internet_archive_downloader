@@ -24,7 +24,7 @@ The extension works by fetching every leaf of a book, constructing a PDF stream 
 
     * Linux: Supported by default.
 
-* The installed extension supports automatic updates.
+* The installed extension will support automatic updates.
 
 ### For Firefox:
 * Grab the latest package (.xpi) in the [releases](https://github.com/elementdavv/internet_archive_downloader/releases) page.
@@ -75,7 +75,7 @@ The download process may take some breaks due to server constraints.
 * Firefox version 115+ supported
 
 ## Privacy
-[Extension Privacy Policy](Privacy.md)
+Read carefully the [Extension Privacy Policy](Privacy.md).
 
 ## Disclaimer
 The project is for study purpose only. Users should recognize that downloading borrowed limited period books is prohibited. All books downloaded using this project should be deleted within 48 hours. The project is provided on an "as is" basis. Use of the project is at user's own risk. The owner does not guarantee or assume responsibility for any damages to user's computer system, mobile device, loss of data or legal risks that results from using the project.
