@@ -14,21 +14,25 @@ The extension works by fetching every leaf of a book, constructing a PDF stream 
 * Download multiple books in parallel
 
 ## Install manually
-### For Chrome, Edge, Brave, etc:
-* Grab the latest package (.crx) in the [releases](https://github.com/elementdavv/internet_archive_downloader/releases) page.
-* Drop the package from file manager to Extension Manager page on your browser (developer mode must be enabled).
+### Chrome extension
+* Grab the latest package (iadownloader-x.x.x.crx) in the [releases](https://github.com/elementdavv/internet_archive_downloader/releases) page.
+* Drag and Drop the package from file manager to Extension Manager page on your browser (developer mode must be enabled).
 * Due to the install restriction of Chrome with extensions which are not from Chrome WebStore, take the following steps:
     * Windows: Download registry file [windows.reg](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/windows.reg). Double click to run it. The file will allow the Internet Archive Downloader extension CRX file to install in Chrome, Edge, Brave and Vivaldi browser.
 
-    * Mac OS: Download policy file [Chrome](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/com.google.Chrome.mobileconfig) / [Edge](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/com.microsoft.Edge.mobileconfig) / [Brave](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/com.brave.Browser.mobileconfig), each for their corresponding browser. Double click a profile to run it. Then from System Preferences (or System Settings) find the item of "Profile" (it may be in current page, or inside "General", "Security and Privacy" item, dependent of Mac OS version). In "Profile" setting page, click "install" button for individual profile. The profiles will allow the Internet Archive Downloader extension CRX file to install in Chrome, Edge and Brave browser.
+    * Mac OS: Download policy file [Chrome](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/com.google.Chrome.mobileconfig) / [Edge](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/com.microsoft.Edge.mobileconfig) / [Brave](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/com.brave.Browser.mobileconfig), each for their corresponding browser. Double click a profile to run it. Then from System Preferences (or System Settings) find the item of "Profile" (it may be in current page, or inside "General", "Security and Privacy" item, dependent of Mac OS version). In "Profile" setting page, click "install" button to activate it. The profiles will allow the Internet Archive Downloader extension CRX file to install in Chrome, Edge and Brave browser.
 
     * Linux: Supported by default.
 
-* The installed extension will support automatic updates.
+* Another install method: change the file extension of the downloaded crx file into ".zip", unpack it some where. Then from browser Extension Manager page, click "Load unpacked" button and choose the unpacked folder (developer mode must be enabled). Extensions installed by this method do not support automatic updates.
 
-### For Firefox:
-* Grab the latest package (.xpi) in the [releases](https://github.com/elementdavv/internet_archive_downloader/releases) page.
-* Drop the package from file manager to Extensions page on Firefox.
+### Edge extension
+* Grab the latest package (iadownloader-edge-x.x.x.crx) in the [releases](https://github.com/elementdavv/internet_archive_downloader/releases) page.
+* Drag and Drop the package from file manager to Extensions page on Edge. (developer mode must be enabled)
+
+### Firefox extension
+* Grab the latest package (iadownloader-x.x.x.xpi) in the [releases](https://github.com/elementdavv/internet_archive_downloader/releases) page.
+* Drag and Drop the package from file manager to Extensions page on Firefox.
 
 ## Install automatically
 - Chrome WebStore (Taken down)
@@ -71,11 +75,11 @@ No login, no borrows required. In [hathitrust.org](https://hathitrust.org), for 
 The download process may take some breaks due to server constraints.
 
 ## Availability
-* Chromium family(Chrome, Chromium, Edge, Brave, Vivaldi, Opera, Yandex, Kiwi, etc) version 90+ supported
+* Chromium family(Chromium, Chrome, Edge, Brave, Vivaldi, Opera, Yandex, Kiwi, etc) version 90+ supported
 * Firefox version 115+ supported
 
 ## Privacy
-Read carefully the [Extension Privacy Policy](Privacy.md).
+Please read carefully the [Extension Privacy Policy](Privacy.md).
 
 ## Disclaimer
 The project is for study purpose only. Users should recognize that downloading borrowed limited period books is prohibited. All books downloaded using this project should be deleted within 48 hours. The project is provided on an "as is" basis. Use of the project is at user's own risk. The owner does not guarantee or assume responsibility for any damages to user's computer system, mobile device, loss of data or legal risks that results from using the project.
