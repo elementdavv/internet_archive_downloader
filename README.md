@@ -14,17 +14,17 @@ The extension works by fetching every leaf of a book, constructing a PDF stream 
 * Download multiple books in parallel
 
 ## Install manually
+Install as the following directions will support automatic updates.
+
 ### Chrome extension
 * Grab the latest package (iadownloader-x.x.x.crx) in the [releases](https://github.com/elementdavv/internet_archive_downloader/releases) page.
-* Drag and Drop the package from file manager to Extension Manager page on your browser (developer mode must be enabled).
+* Drag and Drop the package from file manager to Extensions page on browser (developer mode must be enabled).
 * Due to the install restriction of Chrome with extensions which are not from Chrome WebStore, take the following steps:
     * Windows: Download registry file [windows.reg](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/windows.reg). Double click to run it. The file will allow the Internet Archive Downloader extension CRX file to install in Chrome, Edge, Brave and Vivaldi browser.
 
     * Mac OS: Download policy file [Chrome](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/com.google.Chrome.mobileconfig) / [Edge](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/com.microsoft.Edge.mobileconfig) / [Brave](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/com.brave.Browser.mobileconfig), each for their corresponding browser. Double click a profile to run it. Then from System Preferences (or System Settings) find the item of "Profile" (it may be in current page, or inside "General", "Security and Privacy" item, dependent of Mac OS version). In "Profile" setting page, click "install" button to activate it. The profiles will allow the Internet Archive Downloader extension CRX file to install in Chrome, Edge and Brave browser.
 
     * Linux: Supported by default.
-
-* Another install method: change the file extension of the downloaded crx file into ".zip", unpack it some where. Then from browser Extension Manager page, click "Load unpacked" button and choose the unpacked folder (developer mode must be enabled). Extensions installed by this method do not support automatic updates.
 
 ### Edge extension
 * Grab the latest package (iadownloader-edge-x.x.x.crx) in the [releases](https://github.com/elementdavv/internet_archive_downloader/releases) page.
@@ -90,4 +90,4 @@ The project is for study purpose only. Users should recognize that downloading b
 Any questions and/or suggestions are appreciatiated.
 
 ## Donation
-If you want to support my work you could donate some coins. [![donate](resources/logo/paypal-logo.png)](https://paypal.me/timelegend)
+If you want to support my work you could donate to [![donate](resources/logo/paypal-logo.png)](https://paypal.me/timelegend)
