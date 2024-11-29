@@ -26,6 +26,7 @@
     : 'navigate'
 
   const streamSaver = {
+    testSw,
     createWriteStream,
     WritableStream: global.WritableStream || ponyfill.WritableStream,
     supportsTransferable: false,
@@ -92,14 +93,16 @@
     return popup
   }
 
+  function testSw(swInNavigator) {
   try {
     // We can't look for service worker since it may still work on http
     new Response(new ReadableStream())
-    if (isSecureContext && !('serviceWorker' in navigator)) {
+    if (isSecureContext && !('serviceWorker' in navigator || swInNavigator)) {
       useBlobFallback = true
     }
   } catch (err) {
     useBlobFallback = true
+  }
   }
 
   test(() => {
@@ -258,7 +261,7 @@
           mitmTransporter.postMessage(...args)
         }, { once: true })
       }
-    }
+    } // !useBlobFallback
 
     let chunks = []
 

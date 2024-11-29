@@ -72,6 +72,7 @@ export default function(){
         switch(data.cmd) {
             case 'init':
                 br = JSON.parse(data.manifest); 
+                if (sw) streamSaver.testSw(br.swInNavigator);
                 await init();
                 break;
             case 'begin':

@@ -258,7 +258,7 @@
           mitmTransporter.postMessage(...args)
         }, { once: true })
       }
-    }
+    } // !useBlobFallback
 
     let chunks = []
 

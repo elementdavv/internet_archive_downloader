@@ -18,6 +18,7 @@
         manifest.firstPageSeq = window.manifest.firstPageSeq;
         manifest.totalSeq = window.manifest.totalSeq;
         manifest.defaultImage = window.manifest.defaultImage;
+        manifest.swInNavigator = navigator.serviceWorker != null;
         return JSON.stringify(manifest);
     }
 

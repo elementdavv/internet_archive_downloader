@@ -20,6 +20,7 @@
         br.server = window.br.server;
         br.data = window.br.data.flat();
         br.protected = window.br.protected;
+        br.swInNavigator = navigator.serviceWorker != null;
         return JSON.stringify(br);
     }
 
