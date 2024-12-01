@@ -35,7 +35,7 @@ Install as the following directions will support automatic updates.
 * Drag and Drop the package from file manager to Extensions page on Firefox.
 
 ## Install automatically
-- Chrome WebStore (Taken down)
+- [Chrome WebStore](https://chrome.google.com/webstore/detail/internet-archive-download/keimonnoakgkpnifppoomfdlkadghkjb) (Taken down)
 - [Edge Addons](https://microsoftedge.microsoft.com/addons/detail/internet-archive-download/cnpoedgimjaecinmgfnfhfmcpcngeeje)
 - [Mozilla Addons (Firefox)](https://addons.mozilla.org/en-US/firefox/addon/internet_archive_downloader/)
 
@@ -83,6 +83,11 @@ Please read carefully the [Extension Privacy Policy](Privacy.md).
 
 ## Disclaimer
 The project is for study purpose only. Users should recognize that downloading borrowed limited period books is prohibited. All books downloaded using this project should be deleted within 48 hours. The project is provided on an "as is" basis. Use of the project is at user's own risk. The owner does not guarantee or assume responsibility for any damages to user's computer system, mobile device, loss of data or legal risks that results from using the project.
+
+## Contacts
+- Email: elementdavv@hotmail.com
+- Telegram: [@elementdavv](https://t.me/elementdavv)
+- X(Twitter): [@elementdavv](https://x.com/elementdavv)
 
 ## Donation
 If you want to support my work you could donate to [![donate](resources/logo/paypal-logo.png)](https://paypal.me/timelegend)
