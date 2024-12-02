@@ -74,6 +74,9 @@ No login, no borrows required. In [hathitrust.org](https://hathitrust.org), for 
 
 The download process may take some breaks due to server constraints.
 
+## Introduction in Youtube
+[![Internet Archive Downloader](https://img.youtube.com/vi/SL4hbCKxl58/0.jpg)](https://www.youtube.com/watch?v=SL4hbCKxl58)
+
 ## Availability
 * Chromium family(Chromium, Chrome, Edge, Brave, Vivaldi, Opera, Yandex, Kiwi, etc) version 90+ supported
 * Firefox version 115+ supported
