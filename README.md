@@ -1,4 +1,4 @@
-# Internet Archive Downloader
+# <img src=resources/logo/icons8-export-pdf-90.png width=45> Internet Archive Downloader
 
 In [Internet Archive](https://archive.org), Some books can be borrowed to read online for a limited period. The extension will try to download these books.
 
