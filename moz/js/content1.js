@@ -27,7 +27,7 @@ export default function(){
     <div class='iadlabel'>Quality</div>
 </div>
 <div class='topinblock download-btn'>
-    <button class='button' type='button' onclick=window.postMessage({extid:'${extid}',cmd:'begin',ctrl:event.ctrlKey||event.metaKey,alt:event.altKey},'${origin}')>
+    <button class='button' id='iadbuttonid' type='button'>
         <div>
             <span class='iconochive-download'></span>
             <span class='icon-label' id='iadprogressid'></span>
@@ -51,17 +51,6 @@ export default function(){
                 br = JSON.parse(data.br); 
                 if (sw) streamSaver.testSw(br.swInNavigator);
                 await init();
-                break;
-            case 'begin':
-                ctrl = false;
-                alt = false;
-
-                if (status == 0) {
-                    ctrl = data.ctrl;
-                    alt = data.alt;
-                }
-
-                begin();
                 break;
             default:
                 break;
@@ -90,6 +79,17 @@ export default function(){
         if (iadlabel.length > 0) return;
         const ab = fromClass('action-buttons-section');
         ab[0]?.insertAdjacentHTML("afterbegin", buttonstring);
+        fromId('iadbuttonid').addEventListener('click', iadDownload);
+    }
+
+    const iadDownload = (e) => {
+        ctrl = false;
+        alt = false;
+        if (status == 0) {
+            ctrl = e.ctrlKey || e.metaKey;
+            alt = e.altKey;
+        }
+        begin();
     }
 
     function loadScales() {
