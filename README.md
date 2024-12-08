@@ -1,5 +1,4 @@
 # <img src=resources/logo/icons8-export-pdf-90.png width=45> Internet Archive Downloader
-
 In [Internet Archive](https://archive.org), Some books can be borrowed to read online for a limited period. The extension will try to download these books.
 
 In [HathiTrust Digital Library](https://hathitrust.org). books with full view permission is also supported.
@@ -14,33 +13,30 @@ The extension works by fetching every leaf of a book, constructing a PDF stream 
 * Download multiple books in parallel
 
 ## Install manually
-Install as the following directions will support automatic updates.
+Install as the following directions supports automatic updates.
 
-### Chrome extension
-* Grab the latest package (iadownloader-x.x.x.crx) in the [releases](https://github.com/elementdavv/internet_archive_downloader/releases) page.
-* Drag and Drop the package from file manager to Extensions page on browser (developer mode must be enabled).
+### Chrome extension (Works on Chromium family)
+* Navigate to [releases](https://github.com/elementdavv/internet_archive_downloader/releases) page, find and download the latest **iadownloader-x.x.x.crx**.
+* Drag and Drop the CRX file from file manager to Extensions page on browser (developer mode must be enabled).
 * Due to the install restriction of Chrome with extensions which are not from Chrome WebStore, take the following steps:
-    * Windows: Download registry file [windows.reg](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/windows.reg). Double click to run it. The file will allow the Internet Archive Downloader extension CRX file to install in Chrome, Edge, Brave and Vivaldi browser.
-
-    * Mac OS: Download policy file [Chrome](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/com.google.Chrome.mobileconfig) / [Edge](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/com.microsoft.Edge.mobileconfig) / [Brave](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/com.brave.Browser.mobileconfig), each for their corresponding browser. Double click a profile to run it. Then from System Preferences (or System Settings) find the item of "Profile" (it may be in current page, or inside "General", "Security and Privacy" item, dependent of Mac OS version). In "Profile" setting page, click "install" button to activate it. The profiles will allow the Internet Archive Downloader extension CRX file to install in Chrome, Edge and Brave browser.
-
+    * Windows: Download registry file [windows.reg](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/windows.reg). Double click to run it. The file will allow Internet Archive Downloader extension CRX file to install in Chrome, Edge, Brave and Vivaldi browser.
+    * Mac OS: Download policy file for [Chrome](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/com.google.Chrome.mobileconfig) / [Edge](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/com.microsoft.Edge.mobileconfig) / [Brave](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/com.brave.Browser.mobileconfig). Double click to run it. Then from System Preferences (or System Settings) find the item of "Profile" (it may be in current page, or inside "General", "Security and Privacy" item, dependent of Mac OS version). In the "Profile" setting page, click "install" button to activate it. The profiles will allow Internet Archive Downloader extension CRX file to install in Chrome, Edge and Brave browser.
     * Linux: Supported by default.
 
-### Edge extension
-* Grab the latest package (iadownloader-edge-x.x.x.crx) in the [releases](https://github.com/elementdavv/internet_archive_downloader/releases) page.
-* Drag and Drop the package from file manager to Extensions page on Edge. (developer mode must be enabled)
+### Edge extension (Works on Edge only)
+* Navigate to [releases](https://github.com/elementdavv/internet_archive_downloader/releases) page, find and download the latest **iadownloader-edge-x.x.x.crx**.
+* Drag and Drop the CRX file from file manager to Extensions page on Edge (developer mode must be enabled).
 
 ### Firefox extension
-* Grab the latest package (iadownloader-x.x.x.xpi) in the [releases](https://github.com/elementdavv/internet_archive_downloader/releases) page.
-* Drag and Drop the package from file manager to Extensions page on Firefox.
+* With Firefox, nvigate to [releases](https://github.com/elementdavv/internet_archive_downloader/releases) page, find and click the latest **iadownloader-x.x.x.xpi** to install.
 
 ## Install automatically
 - [Chrome WebStore](https://chrome.google.com/webstore/detail/internet-archive-download/keimonnoakgkpnifppoomfdlkadghkjb) (Taken down)
-- [Edge Addons](https://microsoftedge.microsoft.com/addons/detail/internet-archive-download/cnpoedgimjaecinmgfnfhfmcpcngeeje)
+- [Edge Addons](https://microsoftedge.microsoft.com/addons/detail/internet-archive-download/cnpoedgimjaecinmgfnfhfmcpcngeeje) (updates slowly)
 - [Mozilla Addons (Firefox)](https://addons.mozilla.org/en-US/firefox/addon/internet_archive_downloader/)
 
 ## Configuration
-In Firefox, permissions of access to relative websites must be granted in the "Permissions" tab of the extension detail page.
+For Firefox, permissions of access to relative websites must be granted in the "Permissions" tab of the extension detail page.
 
 ## Usage
 ### Internet Archive:
@@ -52,6 +48,7 @@ In [archive.org](https://archive.org), the availability of books lies in three c
 The extension works with category 1 and 2.
 
 After borrowing a book, two new buttons, "Quality" and "Download", appear under the book viewer alongside the "Favorite" button. 
+
 <image src="resources/capture/borrow1.png">
 
 * To get the current book as a PDF file, press the "Download" button.
@@ -64,6 +61,7 @@ On successful downloads, the book will be returned automatically for availabilit
 
 ### HathiTrust:
 No login, no borrows required. In [hathitrust.org](https://hathitrust.org), for books with full view permission, a new section, "Ayesha", appears above the "Download" section on the left-hand side of the page. The section contains three buttons, "Quality", "Tasks" and "Download".
+
 <image src="resources/capture/borrow2.png">
 
 * To get the current book as a PDF file, press the "Download" button.
@@ -93,4 +91,4 @@ The project is for study purpose only. Users should recognize that downloading b
 - X(Twitter): [@elementdavv](https://x.com/elementdavv)
 
 ## Donation
-If you want to support my work you could donate to [![donate](resources/logo/paypal-logo.png)](https://paypal.me/timelegend)
+If you want to support my work you could donate by [![donate](resources/logo/paypal-logo.png)](https://paypal.me/timelegend)
