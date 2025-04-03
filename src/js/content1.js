@@ -547,6 +547,12 @@ export default function(){
 
             const view = new DataView(imageBuffer);
 
+            const response2 = await fetch(uri2, {
+                method: "GET",
+                credentials: "include",
+                signal: ac.signal,
+            });
+
             if (!response2.ok) {
                 throw new Error(response2.status);
             }
