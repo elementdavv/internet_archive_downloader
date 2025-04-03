@@ -533,14 +533,19 @@ export default function(){
                 throw new Error(response.status);
             }
 
-            const buffer = await response.arrayBuffer();
-            const view = new DataView(buffer);
+            let imageBuffer = await response.arrayBuffer();
 
-            const response2 = await fetch(uri2, {
-                method: "GET",
-                credentials: "include",
-                signal: ac.signal,
-            });
+            const obfuscationHeader = response.headers.get("X-Obfuscate");
+            if (obfuscationHeader) {
+                const counter = obfuscationHeader.split("|")[1];
+                const aesKey = uri.replace(/https?:\/\/.*?\//, "/");
+                const decryptedBuffer = await decrypt(imageBuffer.slice(0, 1024), aesKey, counter);
+                const decryptedImageBuffer = new Uint8Array(imageBuffer);
+                decryptedImageBuffer.set(new Uint8Array(decryptedBuffer), 0);
+                imageBuffer = decryptedImageBuffer.buffer;
+            }
+
+            const view = new DataView(imageBuffer);
 
             if (!response2.ok) {
                 throw new Error(response2.status);
@@ -570,6 +575,20 @@ export default function(){
                 }
             }
         }
+    }
+
+    async function decrypt(buffer, aesKey, counter) {
+        const aesKeyArr = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(aesKey));
+        const key = await crypto.subtle.importKey("raw", aesKeyArr.slice(0, 16), "AES-CTR", false, ["decrypt"]);
+        return await crypto.subtle.decrypt(
+          {
+            name: "AES-CTR",
+            length: 64,
+            counter: new Uint8Array(atob(counter).split("").map(char => char.charCodeAt(0))),
+          },
+          key,
+          buffer,
+        );
     }
 
     async function abort(extra) {
