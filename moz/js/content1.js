@@ -10,6 +10,7 @@ import './utils/streamsaver.js';
 import PDFDocument from './pdf/document.js';
 import ZIPDocument from './zip/document.js';
 import Queue from './utils/queue.js';
+import ImageDecoder from './utils/image_decoder.js';
 
 export default function(){
     'use strict';
@@ -535,7 +536,7 @@ export default function(){
                 throw new Error(response.status);
             }
 
-            const buffer = await response.arrayBuffer();
+            const buffer = await ImageDecoder.decodeArchiveImage(response);
             const view = new DataView(buffer);
 
             const response2 = await fetch(uri2, {

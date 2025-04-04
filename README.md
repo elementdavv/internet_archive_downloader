@@ -1,3 +1,6 @@
+> [!WARNING]
+> The extension was taken down from Chrome WebStore. All similar extensions in Chrome WebStore are fraud. Do not install from there.
+
 # <img src=resources/logo/icons8-export-pdf-90.png width=45> Internet Archive Downloader
 In [Internet Archive](https://archive.org), Some books can be borrowed to read online for a limited period. The extension will try to download these books.
 
@@ -15,7 +18,7 @@ The extension works by fetching every leaf of a book, constructing a PDF stream 
 ## Install manually
 Install as the following directions supports automatic updates.
 
-### Chrome extension (Works on Chromium family)
+### Chrome extension
 * Navigate to [releases](https://github.com/elementdavv/internet_archive_downloader/releases) page, find and download the latest **iadownloader-x.x.x.crx**.
 * Drag and Drop the CRX file from file manager to Extensions page on browser (developer mode must be enabled).
 * Due to the install restriction of Chrome with extensions which are not from Chrome WebStore, take the following steps:
@@ -23,16 +26,16 @@ Install as the following directions supports automatic updates.
     * Mac OS: Download policy file for [Chrome](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/com.google.Chrome.mobileconfig) / [Edge](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/com.microsoft.Edge.mobileconfig) / [Brave](https://github.com/elementdavv/internet_archive_downloader/releases/download/v1.0.0/com.brave.Browser.mobileconfig). Double click to run it. Then from System Preferences (or System Settings) find the item of "Profile" (it may be in current page, or inside "General", "Security and Privacy" item, dependent of Mac OS version). In the "Profile" setting page, click "install" button to activate it. The profiles will allow Internet Archive Downloader extension CRX file to install in Chrome, Edge and Brave browser.
     * Linux: Supported by default.
 
-### Edge extension (Works on Edge only)
+### Edge extension
 * Navigate to [releases](https://github.com/elementdavv/internet_archive_downloader/releases) page, find and download the latest **iadownloader-edge-x.x.x.crx**.
 * Drag and Drop the CRX file from file manager to Extensions page on Edge (developer mode must be enabled).
 
 ### Firefox extension
-* With Firefox, nvigate to [releases](https://github.com/elementdavv/internet_archive_downloader/releases) page, find and click the latest **iadownloader-x.x.x.xpi** to install.
+* Run Firefox, navigate to [releases](https://github.com/elementdavv/internet_archive_downloader/releases) page, find and click the latest **iadownloader-x.x.x.xpi** to install.
 
-## Install automatically
+## Install from repository
 - [Chrome WebStore](https://chrome.google.com/webstore/detail/internet-archive-download/keimonnoakgkpnifppoomfdlkadghkjb) (Taken down)
-- [Edge Addons](https://microsoftedge.microsoft.com/addons/detail/internet-archive-download/cnpoedgimjaecinmgfnfhfmcpcngeeje) (updates slowly)
+- [Edge Addons](https://microsoftedge.microsoft.com/addons/detail/internet-archive-download/cnpoedgimjaecinmgfnfhfmcpcngeeje)
 - [Mozilla Addons (Firefox)](https://addons.mozilla.org/en-US/firefox/addon/internet_archive_downloader/)
 
 ## Configuration
@@ -76,7 +79,7 @@ The download process may take some breaks due to server constraints.
 [![Internet Archive Downloader](https://img.youtube.com/vi/SL4hbCKxl58/0.jpg)](https://www.youtube.com/watch?v=SL4hbCKxl58)
 
 ## Availability
-* Chromium family(Chromium, Chrome, Edge, Brave, Vivaldi, Opera, Yandex, Kiwi, etc) version 90+ supported
+* Chromium family (Chromium, Chrome, Edge, Brave, Vivaldi, Opera, Yandex, Kiwi, etc) version 90+ supported
 * Firefox version 115+ supported
 
 ## Privacy

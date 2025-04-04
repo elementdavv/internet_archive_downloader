@@ -9,6 +9,7 @@ import './utils/streamsaver.js';
 import PDFDocument from './pdf/document.js';
 import ZIPDocument from './zip/document.js';
 import Queue from './utils/queue.js';
+import ImageDecoder from './utils/image_decoder.js';
 
 export default function(){
     'use strict';
@@ -533,19 +534,8 @@ export default function(){
                 throw new Error(response.status);
             }
 
-            let imageBuffer = await response.arrayBuffer();
-
-            const obfuscationHeader = response.headers.get("X-Obfuscate");
-            if (obfuscationHeader) {
-                const counter = obfuscationHeader.split("|")[1];
-                const aesKey = uri.replace(/https?:\/\/.*?\//, "/");
-                const decryptedBuffer = await decrypt(imageBuffer.slice(0, 1024), aesKey, counter);
-                const decryptedImageBuffer = new Uint8Array(imageBuffer);
-                decryptedImageBuffer.set(new Uint8Array(decryptedBuffer), 0);
-                imageBuffer = decryptedImageBuffer.buffer;
-            }
-
-            const view = new DataView(imageBuffer);
+            const buffer = await ImageDecoder.decodeArchiveImage(response);
+            const view = new DataView(buffer);
 
             const response2 = await fetch(uri2, {
                 method: "GET",
@@ -581,20 +571,6 @@ export default function(){
                 }
             }
         }
-    }
-
-    async function decrypt(buffer, aesKey, counter) {
-        const aesKeyArr = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(aesKey));
-        const key = await crypto.subtle.importKey("raw", aesKeyArr.slice(0, 16), "AES-CTR", false, ["decrypt"]);
-        return await crypto.subtle.decrypt(
-          {
-            name: "AES-CTR",
-            length: 64,
-            counter: new Uint8Array(atob(counter).split("").map(char => char.charCodeAt(0))),
-          },
-          key,
-          buffer,
-        );
     }
 
     async function abort(extra) {
