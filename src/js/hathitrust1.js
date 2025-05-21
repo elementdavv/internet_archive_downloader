@@ -5,7 +5,7 @@
  * Distributed under terms of the GPL3 license.
  */
 
-import './utils/streamsaver.js';
+import './util2/streamsaver.js';
 import PDFDocument from './pdf/document.js';
 import ZIPDocument from './zip/document.js';
 import Queue from './utils/queue.js';

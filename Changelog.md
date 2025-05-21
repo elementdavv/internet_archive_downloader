@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.0.3
+- patch for image encryption
+- improve popup menu style
+
+## v1.0.2
+- improve compatibility
+
+## v1.0.1
+- patch for Firefox 133.0
+
 ## v1.0.0
 - add support of always available books
 - add support of automatic update for the Chrome extension
