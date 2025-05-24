@@ -10,8 +10,6 @@ export default {
     this._fontSize = 12;
     this._font = null;
 
-    this._registeredFonts = {};
-
     // Set the default font
     if (defaultFont) {
       this.font(fontdata, defaultFont);
@@ -25,16 +23,7 @@ export default {
       family = null;
     }
 
-    // check registered fonts if src is a string
-    if (typeof src === 'string' && this._registeredFonts[src]) {
-      cacheKey = src;
-      ({ src, family } = this._registeredFonts[src]);
-    } else {
-      cacheKey = family || src;
-      if (typeof cacheKey !== 'string') {
-        cacheKey = null;
-      }
-    }
+    cacheKey = family || src;
 
     if (size != null) {
       this.fontSize(size);
@@ -78,12 +67,4 @@ export default {
     return this._font.lineHeight(this._fontSize, includeGap);
   },
 
-  registerFont(name, src, family) {
-    this._registeredFonts[name] = {
-      src,
-      family,
-    };
-
-    return this;
-  },
 };

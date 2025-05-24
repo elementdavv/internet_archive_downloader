@@ -5,6 +5,7 @@ By Devon Govett
 
 import JPEG from './image/jpeg.js';
 import PNGImage from './image/png.js';
+import TBuf from '../utils/tbuf.js';
 
 class PDFImage {
   static open(src, label) {
@@ -16,9 +17,12 @@ class PDFImage {
       else 
         data = src;
     } else {
-      let match;
-      if ((match = /^data:.+;base64,(.*)$/.exec(src))) {
-        data = this.base64ToDataView(match[1]);
+      const match = /^data:.+?;base64,(.*)$/.exec(src);
+      if (match) {
+        data = new DataView(TBuf.base64ToBuffer(match[1]));
+      }
+      else {
+        throw new Error('no image data');
       }
     }
 
@@ -29,21 +33,6 @@ class PDFImage {
     } else {
       throw new Error('Unknown image format.');
     }
-  }
-
-  static view2Str(view) {
-    const result = String.fromCharCode.apply(null, new Uint8Array(view.buffer)).toString();
-    return result;
-  }
-
-  static base64ToDataView(base64) {
-    const binary_string = window.atob(base64);
-    const len = binary_string.length;
-    var bytes = new DataView(len);
-    for (var i = 0; i < len; i++) {
-      bytes[i] = binary_string.charCodeAt(i);
-    }
-    return bytes;
   }
 }
 

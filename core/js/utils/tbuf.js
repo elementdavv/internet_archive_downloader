@@ -77,7 +77,7 @@ const TBuf = {};
             }
         }
         return buf.buffer;
-    };
+    }
 
     // Helper
     // buf: byte array
@@ -96,7 +96,7 @@ const TBuf = {};
             result += String.fromCharCode(buf[i]);
         }
         return result;
-    };
+    }
 
     // convert array to string
     TBuf.dataView2Str = (view, max) => {
@@ -142,7 +142,7 @@ const TBuf = {};
             }
         }
         return buf2binstring(utf16buf, out);
-    };
+    }
 
 
     TBuf.dataView2Hex = (view) => {
@@ -178,6 +178,27 @@ const TBuf = {};
         }
 
         return chunk;
+    }
+
+    // Base64 to ArrayBuffer
+    TBuf.base64ToBuffer = async (base64) => {
+        // var dataUrl = "data:application/octet-binary;base64," + base64;
+        var dataUrl = base64;
+        const response = await fetch(dataUrl);
+        return response.arrayBuffer();
+    }
+
+    // ArrayBuffer or Uint8Array to Base64
+    TBuf.bufferToBase64 = async (buffer) => {
+        // use a FileReader to generate a base64 data URI:
+        const base64url = await new Promise(r => {
+            const reader = new FileReader();
+            reader.onload = () => r(reader.result);
+            reader.readAsDataURL(new Blob([buffer]));
+        });
+        // remove the `data:...;base64,` part from the start
+        // return base64url.substring(base64url.indexOf(',') + 1);
+        return base64url;
     }
 
 export default TBuf;

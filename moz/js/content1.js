@@ -20,7 +20,7 @@ export default function(){
     const sw = !window.showSaveFilePicker;                              // is use service worker
     const ff = /Firefox/.test(navigator.userAgent);                     // is firefox
 
-    const buttonstring = `
+    const BUTTONSTRING = `
 <div class='topinblock button scale-btn'>
     <select id='iadscaleid' class='iadselect'>
         <option value='1' selected>★★★★</option>
@@ -36,6 +36,8 @@ export default function(){
     </button>
 </div>
 `;
+    const MITM = 'https://elementdavv.github.io/streamsaver.js/mitm.html?version=2.0.0';
+    const ENFONT = '/js/pdf/font/data/Georgia.afm';
 
     var br = {};                // book reader
     var status = 0;             // 0:idle, 1:downloading, 2:completed, 3:failed
@@ -79,7 +81,7 @@ export default function(){
         const iadlabel = document.getElementsByClassName('iadlabel');
         if (iadlabel.length > 0) return;
         const ab = fromClass('action-buttons-section');
-        ab[0]?.insertAdjacentHTML("afterbegin", buttonstring);
+        ab[0]?.insertAdjacentHTML("afterbegin", BUTTONSTRING);
         fromId('iadbuttonid').addEventListener('click', iadDownload);
     }
 
@@ -118,13 +120,18 @@ export default function(){
         });
     }
 
+    var lang = 'en';
+    var font = null;
     var fontdata = null;
 
     async function loadFont() {
         console.log('load font data');
-        const fonturl = chrome.runtime.getURL('/js/pdf/font/data/Georgia.afm');
+        font = 'Helvetica';
+        const fonturl = chrome.runtime.getURL(ENFONT);
         const response = await fetch(fonturl);
         fontdata = await response.text();
+        console.log('default font data loaded');
+        download();
     }
 
     var fileid = '';            // book basename
@@ -140,18 +147,20 @@ export default function(){
         pagecount = data.length;
     }
 
-    var info = {};              // book metadata
+    var info = null;            // book metadata
 
     function getMetadata() {
+        if (info) return false;
         console.log('get metadata');
+        info = {};
         info.Title = br.bookTitle;
         const meta = new Map();
         meta.set('by', 'Author');
-        meta.set('Isbn', 'ISBN')
-        meta.set('Language', 'Language')
-        meta.set('Publisher', 'Publisher')
         meta.set('Publication date', 'PublicationDate')
-        meta.set('Contributor', 'Contributor')
+        meta.set('Topics', 'Subject')
+        meta.set('Publisher', 'Publisher')
+        meta.set('Language', 'Language')
+        meta.set('Isbn', 'ISBN')
         const metadata = fromClass('metadata-definition');
 
         for (var i = 0; i < metadata.length; i++) {
@@ -161,8 +170,8 @@ export default function(){
                 info[meta.get(metaname)] = metadata[i].children[1].innerText;
             }
         }
-
-        info.Producer = 'Element Davv';
+        info.Application = manifest.name;
+        return true;
     }
 
     var progress = null;        // progress bar
@@ -177,9 +186,7 @@ export default function(){
         loadCss("/css/iad.css");
         loadButton();
         loadScales();
-        await loadFont();
         getBookInfo();
-        getMetadata();
         getProgress();
         readynotify();
         window.content1iadinit = true;
@@ -237,8 +244,12 @@ export default function(){
             if (getSelPages()) {
                 await clearwaitswfile();
                 getDownloadInfo();
-                console.log(`download ${filename} at ${new Date().toJSON().slice(0,19)}`);
-                download();
+                if (ctrl || !getMetadata()) {
+                    download();
+                }
+                else {
+                    loadFont();
+                }
             }
         }
     };
@@ -318,6 +329,7 @@ export default function(){
     }
 
     async function download() {
+        console.log(`download ${filename} at ${new Date().toJSON().slice(0,19)}`);
         await getFile();
 
         if (doc) {
@@ -389,7 +401,13 @@ export default function(){
         }
     }
 
+    var pdfOptions = null;
+
     async function getFile() {
+        if (!ctrl) {
+            pdfOptions = { pagecount: realcount, info, lang, font, fontdata, };
+        }
+
         try {
             if (sw) {
                 console.log('notify browser: new');
@@ -476,13 +494,13 @@ export default function(){
             await clear();
             completenotify();
 
-            if (endp == pagecount) {
-                returnBook();
-            }
-            else {
+            if (endp != pagecount) {
                 startp += realcount;
                 endp += realcount;
                 if (endp > pagecount) endp = pagecount;
+            }
+            else {
+                returnBook();
             }
         }
         else {
@@ -712,13 +730,7 @@ export default function(){
         const writable = await filehandle.createWritable();
         // writer.write(ArrayBuffer/TypedArray/DataView/Blob/String/StringLiteral)
         writer = await writable.getWriter();
-
-        doc = new PDFDocument(writer, {
-            pagecount: realcount
-            , info
-            , fontdata
-            , font: 'Times-Roman'
-        });
+        doc = new PDFDocument(writer, pdfOptions);
     }
 
     function createZIPDocSW() {
@@ -726,12 +738,7 @@ export default function(){
     }
 
     function createPDFDocSW() {
-        doc = new PDFDocument(writer, {
-            pagecount: realcount
-            , info
-            , fontdata
-            , font: 'Times-Roman'
-        });
+        doc = new PDFDocument(writer, pdfOptions);
     }
 
     function getContent() {
@@ -897,7 +904,7 @@ export default function(){
     }
 
     if (sw) {
-        streamSaver.mitm = 'https://elementdavv.github.io/streamsaver.js/mitm.html?version=2.0.0';
+        streamSaver.mitm = MITM;
     }
 
     if (ff) {

@@ -3,8 +3,7 @@ import StandardFont from './font/standard.js';
 class PDFFontFactory {
   static open(document, src, family, id, fontdata) {
     let font;
-
-    if (typeof src === 'string') {
+    if (StandardFont.isStandardFont(src)) {
       return new StandardFont(document, src, id, fontdata);
     }
 

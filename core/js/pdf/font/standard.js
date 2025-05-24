@@ -1,6 +1,24 @@
 import AFMFont from './afm.js';
 import PDFFont from '../font.js';
 
+// This insanity is so bundlers can inline the font files
+const STANDARD_FONTS = [
+    'Courier',
+    'Courier-Bold',
+    'Courier-Oblique',
+    'Courier-BoldOblique',
+    'Helvetica',
+    'Helvetica-Bold',
+    'Helvetica-Oblique',
+    'Helvetica-BoldOblique',
+    'Times-Roman',
+    'Times-Bold',
+    'Times-Italic',
+    'Times-BoldItalic',
+    'Symbol',
+    'ZapfDingbats'
+];
+
 class StandardFont extends PDFFont {
   constructor(document, name, id, fontdata) {
     super();
@@ -60,6 +78,11 @@ class StandardFont extends PDFFont {
     const scale = size / 1000;
     return width * scale;
   }
+
+  static isStandardFont(name) {
+    return STANDARD_FONTS.includes(name);
+  }
+
 }
 
 export default StandardFont;

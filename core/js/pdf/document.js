@@ -62,6 +62,12 @@ class PDFDocument {
       Pages,
     });
 
+    if (this.options.lang) {
+      this._root.data.Lang = new String(this.options.lang);
+      const rtlLangs = [ 'ar', 'he', 'fa', ];            // arabic, hebrew, persian
+      this.rtl = rtlLangs.includes(this.options.lang);
+    }
+
     // The current page
     this.page = null;
 

@@ -19,7 +19,7 @@ export default function(){
     const ff = /Firefox/.test(navigator.userAgent);                     // is firefox
     const buttonid = `${(new Date()).getTime()}-${Math.ceil(Math.random() * 1e3)}`;
 
-    const buttonstring = `
+    const BUTTONSTRING = `
 <div class='accordion-item null panel svelte-g6tm5k'>
     <h2 class='accordion-header' id='h${buttonid}'>
         <button class='accordion-button svelte-g6tm5k collapsed' type='button' data-bs-toggle='collapse' data-bs-target='#c${buttonid}' aria-expanded='false' aria-controls='c${buttonid}'>
@@ -57,6 +57,8 @@ export default function(){
     </div>
 </div>
 `;
+    const MITM = 'https://elementdavv.github.io/streamsaver.js/mitm.html?version=2.0.0';
+    const ENFONT = '/js/pdf/font/data/Georgia.afm';
 
     var br = {};                // book reader
     var status = 0;             // 0:idle, 1:downloading, 2:completed, 3:failed
@@ -110,7 +112,7 @@ export default function(){
         const ayesha = document.getElementsByClassName('me-1')[1]?.textContent;
         if (ayesha == 'Ayesha') return;
         const ac = fromId('controls')?.getElementsByClassName("border-top");
-        ac[0]?.insertAdjacentHTML("afterend", buttonstring);
+        ac[0]?.insertAdjacentHTML("afterend", BUTTONSTRING );
     }
 
     function loadScales() {
@@ -130,13 +132,18 @@ export default function(){
         }
     }
 
+    var lang = 'en';
+    var font = null;
     var fontdata = null;
 
     async function loadFont() {
         console.log('load font data');
-        const fonturl = chrome.runtime.getURL('/js/pdf/font/data/Georgia.afm');
+        font = 'Helvetica';
+        const fonturl = chrome.runtime.getURL(ENFONT);
         const response = await fetch(fonturl);
         fontdata = await response.text();
+        console.log('default font data loaded');
+        download();
     }
 
     var fileid = '';            // book basename
@@ -152,15 +159,18 @@ export default function(){
         pagecount = br.totalSeq;
     }
 
-    var info = {};              // book metadata
+    var info = null;            // book metadata
 
     function getMetadata() {
+        if (info) return false;
         console.log('get metadata');
+        info = {};
         if (br.metadata.title) info.Title = br.metadata.title;
         if (br.metadata.author) info.Author = br.metadata.author;
         if (br.metadata.publisher) info.Publisher = br.metadata.publisher;
         if (br.metadata.publicationDate) info.PublicationDate = br.metadata.publicationDate;
-        info.Producer = 'Element Davv';
+        info.Application = manifest.name;
+        return true;
     }
 
     var progress = null;        // progress bar
@@ -175,9 +185,7 @@ export default function(){
         loadCss("/css/iad.css");
         loadButton();
         loadScales();
-        await loadFont();
         getBookInfo();
-        getMetadata();
         getProgress();
         readynotify();
         window.hathitrust1iadinit = true;
@@ -238,8 +246,12 @@ export default function(){
             if (getSelPages()) {
                 await clearwaitswfile();
                 getDownloadInfo();
-                console.log(`download ${filename} at ${new Date().toJSON().slice(0,19)}`);
-                download();
+                if (ctrl || !getMetadata()) {
+                    download();
+                }
+                else {
+                    loadFont();
+                }
             }
         }
     };
@@ -321,6 +333,7 @@ export default function(){
     }
 
     async function download() {
+        console.log(`download ${filename} at ${new Date().toJSON().slice(0,19)}`);
         await getFile();
 
         if (doc) {
@@ -392,7 +405,13 @@ export default function(){
         }
     }
 
+    var pdfOptions = null;
+
     async function getFile() {
+        if (!ctrl) {
+            pdfOptions = { pagecount: realcount, info, lang, font, fontdata, };
+        }
+
         try {
             if (sw) {
                 console.log('notify browser: new');
@@ -735,13 +754,7 @@ export default function(){
         const writable = await filehandle.createWritable();
         // writer.write(ArrayBuffer/TypedArray/DataView/Blob/String/StringLiteral)
         writer = await writable.getWriter();
-
-        doc = new PDFDocument(writer, {
-            pagecount: realcount
-            , info
-            , fontdata
-            , font: 'Times-Roman'
-        });
+        doc = new PDFDocument(writer, pdfOptions);
     }
 
     function createZIPDocSW() {
@@ -749,12 +762,7 @@ export default function(){
     }
 
     function createPDFDocSW() {
-        doc = new PDFDocument(writer, {
-            pagecount: realcount
-            , info
-            , fontdata
-            , font: 'Times-Roman'
-        });
+        doc = new PDFDocument(writer, pdfOptions);
     }
 
     function getContent() {
@@ -865,7 +873,7 @@ export default function(){
     }
 
     if (sw) {
-        streamSaver.mitm = 'https://elementdavv.github.io/streamsaver.js/mitm.html?version=2.0.0';
+        streamSaver.mitm = MITM;
     }
 
     if (ff) {

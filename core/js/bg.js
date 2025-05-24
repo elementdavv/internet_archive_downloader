@@ -5,6 +5,8 @@
  * Distributed under terms of the GPL3 license.
  */
 
+import TBuf from './utils/tbuf.js';
+
 (() => {
     'use strict';
 
@@ -36,28 +38,29 @@
     }
 
     // when new/abort download from extension
-    chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (sender.id != chrome.runtime.id) return;
 
         console.log('message received:');
         console.log(message);
-        var fileidtab = await loadFileidtab();
+        loadFileidtab().then(fileidtab => {
+        const tabid = sender.tab.id;
 
         switch(message.cmd) {
             case 'new':
                 const fileid = message.fileid;
-                const tabid = sender.tab.id;
                 fileidtab.set(fileid, tabid);
                 saveFileidtab(fileidtab);
                 console.log(`fileid added: ${fileid}`);
                 console.log(fileidtab);
+                sendResponse({});
                 break;
             case 'abort':
                 var found = 0;
 
                 // if download hasn't begin
-                fileidtab.forEach((tabid, fileid) => {
-                    if (parseInt(tabid) == sender.tab.id) {
+                fileidtab.forEach((tid, fileid) => {
+                    if (parseInt(tid) == tabid) {
                         found = fileid;
                     }
                 });
@@ -71,10 +74,9 @@
 
                 // if user interrupt during download
                 found = 0;
-                var downloadidtab = await loadDownloadidtab();
-
-                downloadidtab.forEach((tabid, downloadid) => {
-                    if (parseInt(tabid) == sender.tab.id) {
+                loadDownloadidtab().then(downloadidtab => {
+                downloadidtab.forEach((tid, downloadid) => {
+                    if (parseInt(tid) == tabid) {
                         found = downloadid;
                         chrome.downloads.cancel(parseInt(downloadid));
                         console.log(`download aborted: ${downloadid}`);
@@ -88,12 +90,32 @@
                     console.log(downloadidtab);
                 }
 
+                sendResponse({});
+                });
+                break;
+            case 'fetch':
+                const fonturl = message.fonturl;
+
+                fetch(fonturl, { responseType: 'arraybuffer' }).then(response => {
+                    response.arrayBuffer().then(buffer => {
+                        TBuf.bufferToBase64(buffer).then(base64 => {
+                            chrome.storage.local.set({ [fonturl]: base64 }).then(() => {
+                                sendResponse({ status: true });
+                            });
+                        });
+                    })
+                })
+                .catch(e => {
+                    console.error(e)
+                    sendResponse({ status: false });
+                });
                 break;
             default:
+                sendResponse({});
                 break;
         }
-
-        sendResponse({});
+        });
+        return true;
     });
 
     // when user confirm in save as dialog/automatic confirm
