@@ -18,7 +18,6 @@ class ImageDecoder {
             decryptedImageBuffer.set(new Uint8Array(decryptedBuffer), 0);
             imageBuffer = decryptedImageBuffer.buffer;
         }
-
         return imageBuffer;
     }
 

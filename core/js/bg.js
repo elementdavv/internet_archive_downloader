@@ -13,19 +13,21 @@ import TBuf from './utils/tbuf.js';
     chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         const detail = 'https://archive.org/details';
         const detail2 = 'https://babel.hathitrust.org/cgi/pt';
-        const js = 'js/content.js';
-        const js2 = 'js/hathitrust.js';
+        const jsc = 'js/contents.js';
 
         if (changeInfo.status == 'complete') {
             if (tab.url.indexOf(detail) > -1) {
                 const dnr = await loadDnr();
 
                 if (dnr == 1) {
-                    injectjs(tabId, js);
+                    injectjs(tabId, jsc);
+                }
+                else {
+                    console.log('Internet Archive Downloader unsupported.');
                 }
             }
             else if (tab.url.indexOf(detail2) > -1) {
-                injectjs(tabId, js2);
+                injectjs(tabId, jsc);
             }
         }
     });
@@ -43,10 +45,11 @@ import TBuf from './utils/tbuf.js';
 
         console.log('message received:');
         console.log(message);
-        loadFileidtab().then(fileidtab => {
-        const tabid = sender.tab.id;
 
-        switch(message.cmd) {
+        loadFileidtab().then(fileidtab => {
+            const tabid = sender.tab.id;
+
+            switch(message.cmd) {
             case 'new':
                 const fileid = message.fileid;
                 fileidtab.set(fileid, tabid);
@@ -71,26 +74,25 @@ import TBuf from './utils/tbuf.js';
                     console.log(`fileid removed: ${found}`);
                     console.log(fileidtab);
                 }
-
                 // if user interrupt during download
                 found = 0;
+
                 loadDownloadidtab().then(downloadidtab => {
-                downloadidtab.forEach((tid, downloadid) => {
-                    if (parseInt(tid) == tabid) {
-                        found = downloadid;
-                        chrome.downloads.cancel(parseInt(downloadid));
-                        console.log(`download aborted: ${downloadid}`);
+                    downloadidtab.forEach((tid, downloadid) => {
+                        if (parseInt(tid) == tabid) {
+                            found = downloadid;
+                            chrome.downloads.cancel(parseInt(downloadid));
+                            console.log(`download aborted: ${downloadid}`);
+                        }
+                    });
+
+                    if (found != 0) {
+                        downloadidtab.delete(found);
+                        saveDownloadidtab(downloadidtab);
+                        console.log(`downloadid removed: ${found}`);
+                        console.log(downloadidtab);
                     }
-                });
-
-                if (found != 0) {
-                    downloadidtab.delete(found);
-                    saveDownloadidtab(downloadidtab);
-                    console.log(`downloadid removed: ${found}`);
-                    console.log(downloadidtab);
-                }
-
-                sendResponse({});
+                    sendResponse({});
                 });
                 break;
             case 'fetch':
@@ -100,20 +102,20 @@ import TBuf from './utils/tbuf.js';
                     response.arrayBuffer().then(buffer => {
                         TBuf.bufferToBase64(buffer).then(base64 => {
                             chrome.storage.local.set({ [fonturl]: base64 }).then(() => {
-                                sendResponse({ status: true });
+                                sendResponse({ ok: true });
                             });
                         });
                     })
                 })
                 .catch(e => {
                     console.error(e)
-                    sendResponse({ status: false });
+                    sendResponse({ ok: false });
                 });
                 break;
             default:
                 sendResponse({});
                 break;
-        }
+            }
         });
         return true;
     });
@@ -121,7 +123,6 @@ import TBuf from './utils/tbuf.js';
     // when user confirm in save as dialog/automatic confirm
     chrome.downloads.onCreated.addListener(async downloadItem => {
         var fileidtab = await loadFileidtab();
-
         if (fileidtab.size == 0) return;
 
         console.log('download created:')
@@ -156,7 +157,6 @@ import TBuf from './utils/tbuf.js';
     // when download paused/resume/canceled/error/complete from browser
     chrome.downloads.onChanged.addListener(async downloadDelta => {
         var downloadidtab = await loadDownloadidtab();
-
         if (!downloadidtab.has('' + downloadDelta.id)) return;
 
         console.log('download change:')
@@ -164,14 +164,12 @@ import TBuf from './utils/tbuf.js';
         const downloadid = '' + downloadDelta.id;
         const tabid = parseInt(downloadidtab.get(downloadid));
 
-        if (downloadDelta.paused != undefined
-            && downloadDelta.paused.current == true) {
+        if (downloadDelta.paused != undefined && downloadDelta.paused.current == true) {
             chrome.tabs.sendMessage(tabid, {
                 cmd:'pause'
             });
         }
-        else if (downloadDelta.paused != undefined
-            && downloadDelta.paused.current == false) {
+        else if (downloadDelta.paused != undefined && downloadDelta.paused.current == false) {
             chrome.tabs.sendMessage(tabid, {
                 cmd:'resume'
             });
@@ -191,8 +189,7 @@ import TBuf from './utils/tbuf.js';
                 chrome.downloads.cancel(parseInt(downloadid));
             }
         }
-        else if (downloadDelta.state !== undefined
-            && downloadDelta.state.current == 'complete') {
+        else if (downloadDelta.state !== undefined && downloadDelta.state.current == 'complete') {
             downloadidtab.delete(downloadid);
             saveDownloadidtab(downloadidtab);
             console.log(`downloadid removed: ${downloadid}`);

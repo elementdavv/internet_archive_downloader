@@ -43,11 +43,11 @@ class ZIPDocument {
             } else if (data.getUint16(0) === 0x8950 && data.getUint16(2) === 0x4e47) {
                 ext = '.png';
             }
-
             name += ext;
         }
 
         if (this.files[name]) throw new Error('File already exists.');
+
         const nameBuf = this.encoder.encode(name);
         this.filenames.push(name);
 
@@ -60,7 +60,6 @@ class ZIPDocument {
             compressedLength: 0,
             uncompressedLength: 0,
         };
-
         this.writeHeader(zipObject);
         this.writerImage(zipObject, fileLike.view);
         this.writeFooter(zipObject);
@@ -76,7 +75,6 @@ class ZIPDocument {
         if (zipObject.level !== 0 && !zipObject.directory) {
             header.view.setUint16(4, 0x0800);
         }
-
         header.view.setUint32(0, 0x14000808);
         header.view.setUint16(6, (((date.getHours() << 6) | date.getMinutes()) << 5) | date.getSeconds() / 2, true);
         header.view.setUint16(8, ((((date.getFullYear() - 1980) << 4) | (date.getMonth() + 1)) << 5) | date.getDate(), true);
@@ -97,6 +95,7 @@ class ZIPDocument {
 
     writerImage(zipObject, view) {
         if (zipObject.directory) return;
+
         zipObject.crc = new Crc32();
         zipObject.crc.append(view);
         zipObject.uncompressedLength += view.byteLength;
@@ -116,7 +115,6 @@ class ZIPDocument {
             footer.view.setUint32(8, zipObject.compressedLength, true);
             footer.view.setUint32(12, zipObject.uncompressedLength, true);
         }
-
         this.write(footer.array);
         this.offset += zipObject.compressedLength + 16;
     }
@@ -134,7 +132,6 @@ class ZIPDocument {
             file = this.files[this.filenames[indexFilename]];
             length += 46 + file.nameBuf.length + file.comment.length
         }
-
         const data = getDataHelper(length + 22);
 
         for (indexFilename = 0; indexFilename < this.filenames.length; indexFilename++) {
@@ -151,7 +148,6 @@ class ZIPDocument {
             data.array.set(file.comment, index + 46 + file.nameBuf.length);
             index += 46 + file.nameBuf.length + file.comment.length;
         }
-
         data.view.setUint32(index, 0x504b0506);
         data.view.setUint16(index + 8, this.filenames.length, true);
         data.view.setUint16(index + 10, this.filenames.length, true);
@@ -177,7 +173,6 @@ class Crc32 {
         for (var offset = 0, len = data.byteLength | 0; offset < len; offset++) {
             crc = (crc >>> 8) ^ table[(crc ^ data.getInt8(offset)) & 0xFF];
         }
-
         this.crc = crc;
     }
 
@@ -196,7 +191,6 @@ Crc32.prototype.table = (() => {
         }
         table[i] = t;
     }
-
     return table;
 })()
 

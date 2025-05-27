@@ -1,1 +1,1 @@
-../../core/js/hathitrust.js
+../../core/js/hathitrust1.js

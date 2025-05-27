@@ -1,1 +1,0 @@
-../../core/js/content.js

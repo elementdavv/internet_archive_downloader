@@ -1,1 +1,0 @@
-../../../core/js/utils/ponyfill.es6.js

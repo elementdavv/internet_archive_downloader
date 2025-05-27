@@ -35,6 +35,15 @@ export default {
       }
     }
 
+    let w = options.width || image.width;
+    let h = options.height || image.height;
+
+    this.addPage({
+        pageindex: options.pageindex
+        , margin: 0
+        , size: [w, h]
+    });
+
     if (!image.obj) {
       image.embed(this);
     }
@@ -43,26 +52,27 @@ export default {
       this.page.xobjects[image.label] = image.obj;
     }
 
-    let w = options.width || image.width;
-    let h = options.height || image.height;
-
     this.save();
     this.transform(w, 0, 0, -h, x, y + h);
     this.addContent(`/${image.label} Do`);
     this.restore();
 
-    if (text == null || text == '' || text.indexOf('OBJECT') == -1) return this;
+    this.service = options.service ;
+    if (text == null || text == '') return this;
+    if (this.service == 1 && text.indexOf('OBJECT') == -1) return this;
 
     this.opacity(0.0);
     const xmldoc = new DOMParser().parseFromString(text, 'text/xml');
-    var xmlobject = xmldoc.getElementsByTagName('OBJECT');
+    this.PARAGRAPH = this.service == 1 ? 'PARAGRAPH' : '.ocr_par';
+    this.LINE = this.service == 1 ? 'LINE' : '.ocr_line';
+    this.WORD = this.service == 1 ? 'WORD' : '.ocrx_word';
+    this.COORDS = this.service == 1 ? 'coords' : 'data-coords';
+    this.DELIMITER = this.service == 1 ? ',' : ' ';
+    const { maxwidth, maxheight } = this.getMaxDim(xmldoc);
 
-    if (xmlobject == null || xmlobject.length == 0) {
+    if ( maxwidth == 0 ) {
         return this;
     }
-
-    const maxwidth = parseFloat(xmlobject[0].attributes['width'].value);
-    const maxheight = parseFloat(xmlobject[0].attributes['height'].value);
     const xratio = w / maxwidth;
     const yratio = h / maxheight;
 
@@ -70,12 +80,12 @@ export default {
     const lineBinds = this.getAllLineBinds(xmldoc, xratio);
     let l = 0;
 
-    const pars = xmldoc.querySelectorAll('PARAGRAPH');
+    const pars = xmldoc.querySelectorAll(this.PARAGRAPH);
     pars.forEach( par => {
         const fs = this.getFs(par, yratio);
         if (!fs) return;
 
-        const lines = par.querySelectorAll('LINE');
+        const lines = par.querySelectorAll(this.LINE);
         lines.forEach( line => {
             const wy = this.getLineY(line, yratio, fs);
             if (!wy) return;
@@ -85,7 +95,7 @@ export default {
             let word = line.firstElementChild;
             while (word) {
                 // calculate word position x
-                const coords = word.attributes['coords'].value.split(',');
+                const coords = word.attributes[this.COORDS].value.split(this.DELIMITER);
                 let wx = parseFloat(coords[0]) * xratio;
                 const lineWidth = parseFloat(coords[2]) * xratio - wx;      // named by font context
                 wx += overlaps.shift();
@@ -96,6 +106,29 @@ export default {
     });
     return this;
   },
+
+    getMaxDim(xmldoc) {
+        let maxwidth = 0, maxheight = 0;
+
+        if (this.service == 1) {
+            let tag = xmldoc.getElementsByTagName('OBJECT');
+
+            if (tag != null && tag.length > 0) {
+                maxwidth = parseFloat(tag[0].attributes['width'].value);
+                maxheight = parseFloat(tag[0].attributes['height'].value);
+            }
+        }
+        else {
+            let tag = xmldoc.getElementsByTagName('div');
+
+            if (tag != null && tag.length > 0) {
+                let coords = tag[0].attributes[this.COORDS].value.split(this.DELIMITER);
+                maxwidth = parseFloat(coords[2]);
+                maxheight = parseFloat(coords[3]);
+            }
+        }
+        return { maxwidth, maxheight };
+    },
 
     getOverLaps(fs, line, bs, xratio) {
         let loopcount = 0, percent = 1;
@@ -119,7 +152,7 @@ export default {
         while (word) {
             let wx = nx;
             if (wx == 0)
-                wx = parseFloat(word.attributes['coords'].value.split(',')[p1]) * xratio;
+                wx = parseFloat(word.attributes[this.COORDS].value.split(this.DELIMITER)[p1]) * xratio;
             if (!word.previousElementSibling) {
                 lfree = this.rtl ? wx - r : wx - l;
                 overlaps.push(lap);
@@ -127,7 +160,7 @@ export default {
             const wos = this.widthOfString(word.textContent);
             const nw = word.nextElementSibling;
             if (nw) {
-                nx = parseFloat(nw.attributes['coords'].value.split(',')[p1]) * xratio;
+                nx = parseFloat(nw.attributes[this.COORDS].value.split(this.DELIMITER)[p1]) * xratio;
                 lap += this.rtl ? wx - wos - nx : wx + wos - nx;
                 if (!this.rtl && lap < 0) lap = 0;
                 if (this.rtl && lap > 0) lap = 0;
@@ -156,12 +189,12 @@ export default {
 
     // calculate line position y
     getLineY(line, yratio, fs) {
-        const words = line.querySelectorAll('WORD');
+        const words = line.querySelectorAll(this.WORD);
         if (words.length == 0) return null;
         const lys = [];
         words.forEach((word) => {
-            const coords = word.attributes['coords'].value.split(',');
-            const wb = parseFloat(coords[1]);
+            const coords = word.attributes[this.COORDS].value.split(this.DELIMITER);
+            const wb = parseFloat(this.service == 1 ? coords[1] : coords[3]);
             lys.push(wb);
         });
         lys.sort((a, b) => a - b);
@@ -172,17 +205,17 @@ export default {
 
     // calculate paragraph fontsize
     getFs(par, yratio) {
-        const words = par.querySelectorAll('WORD');
+        const words = par.querySelectorAll(this.WORD);
         if (words.length == 0) return null;
         let whs = [];
         words.forEach((word) => {
-            const coords = word.attributes['coords'].value.split(',');
-            const wh = parseFloat(coords[1]) - parseFloat(coords[3]);
+            const coords = word.attributes[this.COORDS].value.split(this.DELIMITER);
+            const wh = Math.abs(parseFloat(coords[3]) - parseFloat(coords[1]));
             whs.push(wh);
         });
         this.rmOddValue(whs);
         whs.sort((a, b) => a - b);
-        const fs = whs[Math.floor(0.85 * whs.length)] * yratio * this.fontSizeProportion();
+        const fs = whs[Math.floor(0.85 * whs.length)] * yratio; // * this.fontSizeProportion();
         return fs;
     },
 
@@ -191,7 +224,7 @@ export default {
         const lbox = this.getAllLineBox(xmldoc);
         const lbs = new Array(lbox.length);
         let i = 0;
-        const lines = xmldoc.querySelectorAll('LINE');
+        const lines = xmldoc.querySelectorAll(this.LINE);
         for (let m = 0; m < lines.length; m++) {
             const line = lines[m];
             if (line.childElementCount > 0) {
@@ -246,7 +279,7 @@ export default {
     },
 
     boxCompatible(b1, b2) {
-        return b1.y1 < b2.y2 || b1.y2 > b2.y1;
+        return b1.y1 >= b2.y2 || b1.y2 <= b2.y1;
     },
 
     // retrieve line binding, set default value if not exist
@@ -262,7 +295,7 @@ export default {
 
     // calculate all line box
     getAllLineBox(xmldoc) {
-        const lines = xmldoc.querySelectorAll('LINE');
+        const lines = xmldoc.querySelectorAll(this.LINE);
         const lbox = [];
         lines.forEach( line => {
             const box = this.getLineBox(line);
@@ -275,15 +308,15 @@ export default {
 
     // calculate line box
     getLineBox(line) {
-        const words = line.querySelectorAll('WORD');
+        const words = line.querySelectorAll(this.WORD);
         if (words.length == 0) return null;
         let x1 = Number.MAX_VALUE, y1 = Number.MAX_VALUE, x2 = 0, y2 = 0;
         words.forEach( word => {
-            const coords = word.attributes['coords'].value.split(',');
+            const coords = word.attributes[this.COORDS].value.split(this.DELIMITER);
             x1 = Math.min(x1, parseFloat(coords[0]));
-            y1 = Math.min(y1, parseFloat(coords[1]));
+            y1 = Math.min(y1, parseFloat(this.service == 1 ? coords[3] : coords[1]));
             x2 = Math.max(x2, parseFloat(coords[2]));
-            y2 = Math.max(y2, parseFloat(coords[3]));
+            y2 = Math.max(y2, parseFloat(this.service == 1 ? coords[1] : coords[3]));
         });
         return {x1, y1, x2, y2};
     },
@@ -348,111 +381,6 @@ export default {
     getAlign() {
         return this.rtl ? 'right' : 'left';
     },
-
-  image2(pageindex, src, text, x, y, options = {}) {
-    let image, left, left1;
-    if (typeof x === 'object') {
-      options = x;
-      x = null;
-    }
-
-    x = (left = x != null ? x : options.x) != null ? left : this.x;
-    y = (left1 = y != null ? y : options.y) != null ? left1 : this.y;
-
-    if (typeof src === 'string') {
-      image = this._imageRegistry[src];
-    }
-
-    if (!image) {
-      if (src.width && src.height) {
-        image = src;
-      } else {
-        image = this.openImage(src);
-      }
-    }
-
-    this.addPage({
-        pageindex
-        , margin: 0
-        , size: [image.width, image.height]
-    });
-
-    if (!image.obj) {
-      image.embed(this);
-    }
-
-    if (this.page.xobjects[image.label] == null) {
-      this.page.xobjects[image.label] = image.obj;
-    }
-
-    let w = options.width || image.width;
-    let h = options.height || image.height;
-
-    this.save();
-    this.transform(w, 0, 0, -h, x, y + h);
-    this.addContent(`/${image.label} Do`);
-    this.restore();
-
-    if (text == null || text == '') return this;
-
-    this.opacity(0.0);
-    const xmldoc = new DOMParser().parseFromString(text, 'text/xml');
-    var divcoords = xmldoc.getElementsByTagName('div')[0].attributes['data-coords'];
-
-    if (divcoords == null) {
-        return this;
-    }
-
-    divcoords = divcoords.value.split(' ');
-    const maxwidth = parseFloat(divcoords[2]);
-    const maxheight = parseFloat(divcoords[3]);
-    const xratio = w / maxwidth;
-    const yratio = h / maxheight;
-
-    // all paragraph in a page
-    const pars= xmldoc.querySelectorAll('.ocr_par');
-    var plh, words, coords, fontsize, lines, ly, wy, wx;
-
-    pars.forEach((par) => {
-        // line high in a paragraph
-        plh = [];
-        words = par.querySelectorAll('.ocrx_word');
-
-        words.forEach((word) => {
-            coords = word.attributes['data-coords'].value.split(' ');
-            plh.push(parseFloat(coords[3]) - parseFloat(coords[1]));
-        });
-
-        plh.sort((a, b) => a - b);
-        // shared fontsize in a paragraph
-        fontsize = plh[Math.floor(0.85 * plh.length)] * yratio;
-        this.fontSize(fontsize);
-        lines = par.querySelectorAll('.ocr_line');
-
-        lines.forEach((line) => {
-            // y position in a line
-            ly = [];
-            words = line.querySelectorAll('.ocrx_word');
-
-            words.forEach((word) => {
-                coords = word.attributes['data-coords'].value.split(' ');
-                ly.push(parseFloat(coords[1]));
-            });
-
-            ly.sort((a, b) => a - b);
-            // shared y position in a line
-            wy = ly[Math.floor(0.15 * ly.length)] * yratio - fontsize * 0.15;
-
-            words.forEach((word) => {
-                coords = word.attributes['data-coords'].value.split(' ');
-                wx = parseFloat(coords[0]) * xratio;
-                this.text(word.textContent, wx, wy);
-            });
-        });
-    });
-
-    return this;
-  },
 
   openImage(src) {
     let image;

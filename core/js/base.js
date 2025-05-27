@@ -1,0 +1,790 @@
+/*
+ * base.js
+ * Copyright (C) 2023 Element Davv<elementdavv@hotmail.com>
+ *
+ * Distributed under terms of the GPL3 license.
+ */
+
+import './utils/streamsaver.js';
+import Queue from './utils/queue.js';
+import PDFDocument from './pdf/document.js';
+import ZIPDocument from './zip/document.js';
+
+'use strict';
+
+const ENFONT = '/js/pdf/font/data/Georgia.afm';                                         // default font
+const MITM = 'https://elementdavv.github.io/streamsaver.js/mitm.html?version=2.0.0';    // streamsaver mitm self host
+const origin = location.origin;                                                         // website origin
+const extid = chrome.runtime.getURL('').match(/[\-0-9a-z]+/g)[1];                       // extension host
+const sw = !window.showSaveFilePicker;                                                  // is using service worker
+const ff = /Firefox/.test(navigator.userAgent);                                         // is firefox
+var t = 0;                                                                              // performance now
+
+export default class Base {
+    constructor() {
+        this.br = {};               // book reader
+        this.status = 0;            // 0:idle, 1:downloading, 2:completed, 3:failed, 4:server complain waiting
+        this.ctrl = false;          // ctrlKey
+        this.alt = false;           // altKey
+
+        this.lang = null;           // language code
+        this.font = null;           // fontname
+        this.fontdata = null;       // font data stream
+
+        this.fileid = '';           // book basename
+        this.url2 = '';             // page text urls
+        this.pagecount = 0;         // page count
+
+        this.info = null;           // book metadata
+
+        this.progress = null;       // progress bar
+
+        this.swaitcreate = false;   // wait for sw file creation
+
+        this.startp = 1;            // start page: one based
+        this.endp = 100;            // end page, inclusive
+        this.realcount = 0;         // real page count selected
+
+        this.scale = '';            // page scale
+        this.filename = "";         // filename to save
+
+        this.swto = null;           // service worker ready timeout
+
+        this.pdfOptions = null;     // pdf creation options
+
+        this.jobs = null;           // jobs
+        this.jobcount = 0;          // job count
+        this.complete = 0;          // page count completed
+        this.paused = 0;            // paused count
+        this.recover = 0;           // recover file
+        this.ac = null;             // AbortController
+        this.content = [];          // book content for zip document
+        this.tasks = 6;             // parallel task number
+        this.trylimit = 3;          // retry limit for each leaf
+
+        this.filehandle = null;     // filesystemfilehandle
+        this.writer = null;         // file stream writer
+        this.doc = null;            // pdf/zip document object
+
+        window.onmessage = this.onmessage;
+
+        if (sw) {
+            chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+                if (sender.id != chrome.runtime.id || (this.status != 1 && this.swaitcreate == false)) return;
+                console.log(`message from browser: ${message.cmd}`);
+
+                switch(message.cmd) {
+                case 'create':
+                    this.created();
+                    break;
+                case 'pause':
+                    this.pause();
+                    break;
+                case 'resume':
+                    this.resume();
+                    break;
+                case 'cancel':
+                    this.abort();
+                    break;
+                default:
+                    break;
+                }
+                sendResponse({});
+            });
+        }
+        if (sw) {
+            streamSaver.mitm = MITM;
+        }
+        if (ff) {
+            import('./utils/ponyfill-writablestream.es6.js').then(ponyfill => {
+                // native TransformStream and WritableStream only work in firefox 113, use ponyfill instead
+                streamSaver.supportsTransferable = false;
+                streamSaver.WritableStream = globalThis.WebStreamsPolyfill.WritableStream;
+            });
+        }
+        const manifest = chrome.runtime.getManifest();
+        console.log(`${manifest.name} ${manifest.version} in action`);
+    }
+
+    onmessage(evt) {
+        if (evt.origin != origin || evt.data.extid != extid) return;
+        let that = window.internetarchivedownloader ;
+        const edata = evt.data;
+        console.log(`\nmessage from window: ${edata.cmd}`);
+
+        switch(edata.cmd) {
+        case 'init':
+            that.br = JSON.parse(edata.br); 
+            if (ff && sw) streamSaver.testSw(that.br.swInNavigator);
+            that.init();
+            break;
+        default:
+            break;
+        }
+    }
+
+    loadScript(href) {
+        console.log(`load script: ${href}`);
+        var script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = chrome.runtime.getURL(href);
+        document.head.appendChild(script);
+    }
+
+    loadCss(href) {
+        console.log(`load css: ${href}`);
+        var link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = chrome.runtime.getURL(href);
+        document.head.appendChild(link);
+    }
+
+    iadDownload (e) {
+        let that = window.internetarchivedownloader ;
+        that.ctrl = false;
+        that.alt = false;
+
+        if (that.status == 0) {
+            that.ctrl = e.ctrlKey || e.metaKey;
+            that.alt = e.altKey;
+        }
+        that.begin();
+    }
+
+    async loadFont1() {
+        console.log('load font data');
+        this.font = 'Times-Roman';
+        const fonturl = chrome.runtime.getURL(ENFONT);
+        const response = await fetch(fonturl);
+        this.fontdata = await response.text();
+        console.log('    default font data loaded');
+        this.download();
+    }
+
+    async loadFont2() {
+        console.log('load font data');
+        let langs = [];
+
+        if (this.lang) {
+            langs.push(this.lang);
+        }
+        else {
+            langs = await this.Lang.getLangs(this.info);
+            this.lang = langs[0];
+        }
+        var fonturl = this.Lang.getFontUrl( langs );
+
+        if (!fonturl) {
+            this.postLoadFont(null);
+            return;
+        }
+        var base64 = await chrome.storage.local.get({ [fonturl]: null });
+
+        if (base64[fonturl]) {
+            this.postLoadFont(base64[fonturl]);
+        }
+        else {
+            let fname = fonturl.substr(fonturl.lastIndexOf('/') + 1);
+            console.log('    download ' + fname);
+
+            chrome.runtime.sendMessage({ cmd: 'fetch', fonturl }, response => {
+                if (response.ok) {
+                    console.log('    download complete');
+
+                    chrome.storage.local.get({ [fonturl]: null }).then(base64 => {
+                        this.postLoadFont(base64[fonturl]);
+                    });
+                }
+                else {
+                    console.log('    download fail, fallback to default font');
+                    this.postLoadFont(null);
+                }
+            });
+        }
+    }
+
+    async postLoadFont(base64) {
+        if (!base64) {
+            this.font = 'Times-Roman';
+            const fonturl = chrome.runtime.getURL(ENFONT);
+            const response = await fetch(fonturl);
+            this.fontdata = await response.text();
+            console.log('    default font data loaded');
+        }
+        else {
+            this.font = this.lang;
+            this.fontdata = await this.TBuf.base64ToBuffer(base64);
+            console.log('    font data loaded');
+        }
+        if (this.lang == '(unknown)') this.lang = null;
+        this.download();
+    }
+
+    getProgress() {
+        console.log('get progress');
+        this.progress = fromId('iadprogressid');
+    }
+
+    async init() {
+        console.log('init begin');
+        this.loadCss('/css/iad.css');
+        const btnData = this.service == 1 ? '/page/btnData.html' : '/page/btnData1.html' ;
+        await this.loadButtons( btnData );
+        this.configButtons();
+        this.getBookInfo();
+        this.getProgress();
+        this.readynotify();
+        window.internetarchivedownloaderinit = true;
+        console.log('init complete');
+    }
+
+    async begin() {
+        let status = this.status;
+
+        if (status == 1) {
+            this.pause();
+            // before confirm dislog returns, onmessage waits.
+            const cf = confirm(getMessage("confirmabort"));
+
+            if (cf) {
+                this.abort({sync: sw});
+            }
+            else {
+                this.resume();
+            }
+        }
+        else if (status == 2 || status == 3) {
+            this.readynotify();
+        }
+        else if (status == 4) {
+            this.tocontinue();
+        }
+        else {
+            console.log('\nmessage from user: download');
+            if (this.getSelPages()) {
+                await this.clean();
+                this.getDownloadInfo();
+
+                if (this.ctrl || !this.getMetadata()) {
+                    this.download();
+                }
+                else {
+                    this.loadFont();
+                }
+            }
+            else {
+                console.log('    download canceled');
+            }
+        }
+    }
+
+    getSelPages() {
+        let startp = this.startp, endp = this.endp, pagecount = this.pagecount;
+        console.log('get selected page range');
+
+        if (this.alt) {
+            const inputpages = prompt(getMessage("promptpage"), `${startp}-${endp}`);
+            if (inputpages == null) return false;
+
+            // valid page range: 1-99999
+            const pagea = inputpages.split(/^([0-9]{0,5})[,-]{1}([0-9]{0,5})$/);
+            if (pagea.length != 4) {
+                console.log('    bad range');
+                alert(getMessage("invalidinput"));
+                return false;
+            }
+            const p1 = Number(pagea[1]);
+            const p2 = Number(pagea[2]);
+            startp = Math.max(p1, 1);
+            endp = ( p2 == 0 || p2 > pagecount ) ? pagecount : p2 ;
+        }
+        else {
+            startp = 1;
+            endp = pagecount;
+        }
+        this.startp = Math.min(startp, endp);
+        this.endp = Math.max(startp, endp);
+        this.realcount = this.endp - this.startp + 1;
+        console.log(`    pages ${this.startp} - ${this.endp} selected`);
+        return true;
+    }
+
+    async download() {
+        console.log(`download ${this.filename} at ${new Date().toJSON().slice(0,19)}`);
+        await this.getFile();
+
+        if (this.doc) {
+            if (sw) {
+                this.waitswfile();
+
+                if (streamSaver.swready) {
+                    const message = 'sw ready';
+                    console.log(message);
+                }
+                else {
+                    this.waitsw();
+                }
+            }
+            else {
+                this.getLeafs();
+            }
+        }
+    }
+
+    // wait for file create event
+    waitswfile() {
+        this.swaitcreate = true;
+    }
+
+    // before begin, clear unclean state
+    async clean() {
+        await this.clearwaitswfile();
+    }
+
+    async clearwaitswfile() {
+        if (this.swaitcreate) {
+            this.swaitcreate = false;
+            const message = 'clear last waitswfile';
+            console.log(message);
+            await this.abortdoc({sync: sw});
+        }
+    }
+
+    // wait and test if service worker is available
+    waitsw() {
+        this.swto = setTimeout(() => {
+            this.swto = null;
+
+            if (streamSaver.swready) {
+                const message = 'sw ready';
+                console.log(message);
+            }
+            else {
+                this.swaitcreate = false;
+                const message = 'File download was blocked';
+                console.log(message);
+                this.abortdoc({sync: sw, message});
+            }
+        }, 3e3);
+    }
+
+    // no longer waiting for service worker
+    clearwaitsw() {
+        if (this.swto) {
+            clearTimeout(this.swto);
+            this.swto = null;
+        }
+    }
+
+    // file created, continuing download
+    created() {
+        if (this.swaitcreate) {
+            this.swaitcreate = false;
+            this.clearwaitsw();
+            this.getLeafs();
+        }
+    }
+
+    async getFile() {
+        if (!this.ctrl) {
+            this.pdfOptions = {
+                    pagecount: this.realcount,
+                    info: this.info,
+                    lang: this.lang,
+                    font: this.font,
+                    fontdata: this.fontdata,
+            };
+        }
+        try {
+            if (sw) {
+                console.log('notify browser: new');
+                await chrome.runtime.sendMessage({cmd: 'new', fileid: this.filename});
+                this.createDocSW();
+            }
+            else {
+                await this.createDoc();
+            }
+        } catch(e) {
+            // error from showSaveFilePicker
+            const message = e.toString();
+            console.log(e);
+
+            // SecurityError: Failed to execute 'showSaveFilePicker' on 'Window': Must be handling a user gesture to show a file picker.
+            if (e.code == 18) {
+                this.writer = null;
+                this.filehandle = null;
+            }
+            // DOMException: The user aborted a request.
+            // streamSaver will always create temporary file
+            if (e.code != 20) {
+                this.abortdoc({sync: sw, message});
+            }
+        };
+    }
+
+    initleaf() {
+        this.jobs = new Queue();
+
+        Array(this.realcount).fill().forEach((_, i) => {
+            this.jobs.enque({pageindex: i + this.startp - 1, tri: 0});
+        });
+        this.jobcount = this.realcount;
+        this.complete = 0;
+        this.paused = 0;
+        this.recover = 0;
+        this.ac = new AbortController();
+        this.content = Array.from({length: this.realcount}, (v, i) => '');
+    }
+
+    getLeafs() {
+        console.log(`chunk number: ${this.realcount}`);
+        this.startnotify();
+        this.initleaf();
+
+        Array(this.tasks).fill().forEach(() => {
+            this.dispatch();
+        });
+    }
+
+    pause() {
+        console.log('paused')
+        this.paused++;
+    }
+
+    resume() {
+        console.log('resume');
+
+        if (--this.paused == 0) {
+            if (this.recover > 0) {
+                Array(this.recover).fill().forEach(() => {
+                    this.dispatch();
+                });
+            }
+            this.recover = 0;
+        }
+    }
+
+    async nextLeaf() {
+        if (++this.complete >= this.jobcount) {
+            await this.clear();
+            this.completenotify();
+
+            if (this.endp != this.pagecount) {
+                this.startp += this.realcount;
+                this.endp += this.realcount;
+                if (this.endp > this.pagecount) this.endp = this.pagecount;
+            }
+            else {
+                this.returnBook();
+            }
+        }
+        else {
+            this.updatenotify();
+
+            if (this.paused > 0) {
+                this.recover++;
+            }
+            else {
+                this.dispatch();
+            }
+        }
+    }
+
+    async clear() {
+        if (this.ctrl) {
+            this.createZIPText();
+        }
+
+        this.ac = null;
+        this.doc.end();
+        await this.writer.ready;
+        await this.writer.close();
+    }
+
+    async syncfetch(pageindex, tri, uri, uri2, width = null, height = null) {
+        try {
+            const response = await fetch(uri, {
+                method: "GET",
+                credentials: "include",
+                responseType: "arraybuffer",
+                signal: this.ac.signal,
+            });
+
+            if (!response.ok) {
+                throw new Error(response.status);
+            }
+
+            let buffer = null;
+
+            if (this.service == 1) {
+                if (!this.ImageDecoder) {
+                    this.ImageDecoder = await import('./utils/image_decoder.js');
+                }
+                buffer = await this.ImageDecoder.default.decodeArchiveImage(response);
+            }
+            else {
+                buffer = await response.arrayBuffer();
+            }
+            const view = new DataView(buffer);
+
+            const response2 = await fetch(uri2, {
+                method: "GET",
+                credentials: "include",
+                signal: this.ac.signal,
+            });
+
+            if (!response2.ok) {
+                throw new Error(response2.status);
+            }
+
+            const text = await response2.text();
+            this.createPage(view, text, pageindex, width, height);
+            this.nextLeaf();
+        }
+        catch(e) {
+            if (this.ac && !this.ac.signal.aborted) {
+                const message = e.toString();
+                console.log(e);
+                // chrome: failed to fetch
+                // firefox: networkerror when fetch resource
+                // server complain: frequent access (hathitrust)
+                // unexpected aborted
+                // gateway bad/timeout
+                if (/fetch|abort|429|502|504/.test(message) && tri < this.trylimit) {
+                    if (message.indexOf('429') > -1) {
+                        towait();
+                    }
+                    else {
+                        console.log(`trunk ${pageindex} failed, retry ${++tri} times`);
+                    }
+                    this.jobs.enque({pageindex, tri});
+                    this.jobcount++;
+                    this.nextLeaf();
+                }
+                else {
+                    abort({sync: sw, message});
+                }
+            }
+        }
+    }
+
+    async abort(extra) {
+        this.failnotify();
+        this.abortLeaf();
+        await this.abortdoc(extra);
+    }
+
+    abortLeaf() {
+        if (this.ac) {
+            console.log('abort uncomplete tasks');
+            this.ac.abort();
+            this.ac = null;
+        }
+    }
+
+    async abortdoc(extra) {
+        if (extra?.sync) {
+            console.log('notify browser: abort');
+            await chrome.runtime.sendMessage({cmd: 'abort'});
+        }
+        this.doc = null;
+
+        if (this.writer?.abort) {
+            await this.writer.abort().catch(e => {
+                console.log(`${e} when abort writer`);
+            }).finally(this.writer = null);
+        }
+        if (this.filehandle?.remove) {
+            // Brave may throw error
+            await this.filehandle.remove().catch(e => {
+                console.log(`${e} when remove filehandle`);
+            }).finally(this.filehandle = null);
+        }
+        if (extra?.message) {
+            alert(getMessage("alerterror", extra.message));
+        }
+    }
+
+    createPage(view, text, pageindex, width, height) {
+        console.log(`chunk ${pageindex} ready`);
+
+        if (this.ctrl) {
+            this.createZIPPage(view, text, pageindex);
+        }
+        else {
+            this.createPDFPage(view, text, pageindex, width, height);
+        }
+    }
+
+    createZIPPage(view, text, pageindex) {
+        this.content[pageindex - this.startp + 1] = text;
+        pageindex++;
+        const name = this.fileid + '_' + pageindex.toString().padStart(4, '0');
+        this.doc.image({view, name});
+    }
+
+    createZIPText() {
+        const uint8 = new TextEncoder().encode(this.getContent());
+        const view = new DataView(uint8.buffer);
+        const name = this.fileid + '.txt';
+        this.doc.image({view, name});
+    }
+
+    createPDFPage(view, text, pageindex, width, height) {
+        pageindex -= this.startp - 1;
+        const options = {pageindex, x:0, y:0, width, height, service: this.service, };
+        this.doc.image(view, text, options);
+    }
+
+    async createDoc() {
+        if (this.ctrl) {
+            await this.createZIPDoc();
+        }
+        else {
+            await this.createPDFDoc();
+        }
+    }
+
+    createDocSW() {
+        const writable = streamSaver.createWriteStream(this.filename);
+        // writer.write(uInt8)
+        this.writer = writable.getWriter();
+
+        if (this.ctrl) {
+            this.createZIPDocSW();
+        }
+        else {
+            this.createPDFDocSW();
+        }
+    }
+
+    async createZIPDoc() {
+        const options = pickOptions( 'Zip archive', { 'application/zip': ['.zip'] } );
+        this.filehandle = await showSaveFilePicker(options);
+        const writable = await this.filehandle.createWritable();
+        // writer.write(ArrayBuffer/TypedArray/DataView/Blob/String/StringLiteral)
+        this.writer = await writable.getWriter();
+        this.doc = new ZIPDocument(this.writer);
+    }
+
+    async createPDFDoc() {
+        const options = pickOptions( 'Portable Document Format (PDF)', { 'application/pdf': ['.pdf'] } );
+        this.filehandle = await showSaveFilePicker(options);
+        const writable = await this.filehandle.createWritable();
+        // writer.write(ArrayBuffer/TypedArray/DataView/Blob/String/StringLiteral)
+        this.writer = await writable.getWriter();
+        this.doc = new PDFDocument(this.writer, this.pdfOptions);
+    }
+
+    pickOptions( description, accept ) {
+        return options = {
+            startIn: 'downloads',
+            suggestedName: this.filename,
+            types: [
+                { description, accept }
+            ],
+        };
+    }
+
+    createZIPDocSW() {
+        this.doc = new ZIPDocument(this.writer);
+    }
+
+    createPDFDocSW() {
+        this.doc = new PDFDocument(this.writer, this.pdfOptions);
+    }
+
+    getContent() {
+        let PARAGRAPH = this.service == 1 ? 'PARAGRAPH' : '.ocr_par';
+        let LINE = this.service == 1 ? 'LINE' : '.ocr_line';
+        let WORD = this.service == 1 ? 'WORD' : '.ocrx_word';
+        let result = '', xmldoc, pars, page, lines, words, t;
+
+        this.content.forEach((text) => {
+            xmldoc = new DOMParser().parseFromString(text, 'text/xml');
+            pars = xmldoc.querySelectorAll(PARAGRAPH);
+            page = '';
+
+            pars.forEach((par) => {
+                lines = par.querySelectorAll(LINE);
+
+                lines.forEach((line) => {
+                    words = line.querySelectorAll(WORD);
+                    t = '';
+
+                    words.forEach((word) => {
+                        if (t != '') t += ' ';
+                        t += word.textContent;
+                    });
+                    page += t + '\n';
+                });
+                page += '\n';
+            });
+            if (result != '') result += '\n';
+            result += page;
+        });
+        return result;
+    }
+
+    startnotify() {
+        console.log('start');
+        teststart();
+        this.progress.classList.add('iadprogress');
+        this.progress.textContent = getMessage("downloading");
+        this.progress.style.width = '0%';
+        this.refreshTip();
+        this.status = 1;
+    }
+
+    updatenotify() {
+        this.progress.style.width = (this.complete / this.jobcount * 100) + '%';
+    }
+
+    completenotify() {
+        const [m, s] = testend();
+        console.log(`download completed in ${m}m${s}s`);
+        this.progress.classList.remove('iadprogress');
+        this.progress.textContent = getMessage("complete");
+        this.refreshTip();
+        this.status = 2;
+    }
+
+    failnotify() {
+        console.log('failed');
+        this.progress.classList.remove('iadprogress');
+        this.progress.textContent = getMessage("fail");
+        this.refreshTip();
+        this.status = 3;
+    }
+
+    readynotify() {
+        console.log('ready');
+        this.progress.textContent = getMessage("download");
+        this.refreshTip();
+        this.status = 0;
+    }
+
+    towait() { }
+    tocontinue() { }
+    returnBook() { }
+    refreshTip() { }
+}  // class
+  
+function fromId(id) {
+    return document.getElementById(id);
+}
+
+function getMessage(messageName, substitutions) {
+    return chrome.i18n.getMessage(messageName, substitutions);
+}
+
+function teststart() {
+    t = performance.now();
+}
+
+function testend() {
+    const ss = (performance.now() - t) / 1000;
+    const m = ~~(ss / 60);
+    const s = ~~(ss % 60);
+    return [m, s];
+}
