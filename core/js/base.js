@@ -7,6 +7,7 @@
 
 import './utils/streamsaver.js';
 import Queue from './utils/queue.js';
+import ImageDecoder from './utils/image_decoder.js';
 import PDFDocument from './pdf/document.js';
 import ZIPDocument from './zip/document.js';
 
@@ -14,14 +15,13 @@ import ZIPDocument from './zip/document.js';
 
 const ENFONT = '/js/pdf/font/data/Georgia.afm';                                         // default font
 const MITM = 'https://elementdavv.github.io/streamsaver.js/mitm.html?version=2.0.0';    // streamsaver mitm self host
-const origin = location.origin;                                                         // website origin
-const extid = chrome.runtime.getURL('').match(/[\-0-9a-z]+/g)[1];                       // extension host
 const sw = !window.showSaveFilePicker;                                                  // is using service worker
 const ff = /Firefox/.test(navigator.userAgent);                                         // is firefox
 var t = 0;                                                                              // performance now
 
 export default class Base {
     constructor() {
+        this.tabid = `${(new Date()).getTime()}-${Math.ceil(Math.random() * 1e3)}`.toString();
         this.br = {};               // book reader
         this.status = 0;            // 0:idle, 1:downloading, 2:completed, 3:failed, 4:server complain waiting
         this.ctrl = false;          // ctrlKey
@@ -107,9 +107,9 @@ export default class Base {
     }
 
     onmessage(evt) {
-        if (evt.origin != origin || evt.data.extid != extid) return;
         let that = window.internetarchivedownloader ;
         const edata = evt.data;
+        if ( edata.tabid != that.tabid ) return;
         console.log(`\nmessage from window: ${edata.cmd}`);
 
         switch(edata.cmd) {
@@ -513,14 +513,10 @@ export default class Base {
             if (!response.ok) {
                 throw new Error(response.status);
             }
-
             let buffer = null;
 
             if (this.service == 1) {
-                if (!this.ImageDecoder) {
-                    this.ImageDecoder = await import('./utils/image_decoder.js');
-                }
-                buffer = await this.ImageDecoder.default.decodeArchiveImage(response);
+                buffer = await ImageDecoder.decodeArchiveImage(response);
             }
             else {
                 buffer = await response.arrayBuffer();
@@ -552,7 +548,7 @@ export default class Base {
                 // gateway bad/timeout
                 if (/fetch|abort|429|502|504/.test(message) && tri < this.trylimit) {
                     if (message.indexOf('429') > -1) {
-                        towait();
+                        this.towait();
                     }
                     else {
                         console.log(`trunk ${pageindex} failed, retry ${++tri} times`);
@@ -562,7 +558,7 @@ export default class Base {
                     this.nextLeaf();
                 }
                 else {
-                    abort({sync: sw, message});
+                    this.abort({sync: sw, message});
                 }
             }
         }
@@ -659,7 +655,7 @@ export default class Base {
     }
 
     async createZIPDoc() {
-        const options = pickOptions( 'Zip archive', { 'application/zip': ['.zip'] } );
+        const options = this.pickOptions( 'Zip archive', { 'application/zip': ['.zip'] } );
         this.filehandle = await showSaveFilePicker(options);
         const writable = await this.filehandle.createWritable();
         // writer.write(ArrayBuffer/TypedArray/DataView/Blob/String/StringLiteral)
@@ -668,7 +664,7 @@ export default class Base {
     }
 
     async createPDFDoc() {
-        const options = pickOptions( 'Portable Document Format (PDF)', { 'application/pdf': ['.pdf'] } );
+        const options = this.pickOptions( 'Portable Document Format (PDF)', { 'application/pdf': ['.pdf'] } );
         this.filehandle = await showSaveFilePicker(options);
         const writable = await this.filehandle.createWritable();
         // writer.write(ArrayBuffer/TypedArray/DataView/Blob/String/StringLiteral)

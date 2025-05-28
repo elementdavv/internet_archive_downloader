@@ -18,7 +18,7 @@ export default class Archive1 extends Base {
 
     setup() {
         this.loadFont = this.loadFont1;
-        this.loadScript("/js/stub.js");
+        this.loadScript("/js/stub.js?tabid=" + this.tabid);
     }
 
     async loadButtons(href) {
@@ -127,13 +127,13 @@ export default class Archive1 extends Base {
     }
 
     returnBook() {
-        if (!thisbr.protected) return;
+        if (!this.br.protected) return;
 
         console.log('return the book.');
         const uri = 'https://archive.org/services/loans/loan';
         const formdata = new FormData();
         formdata.set('action', 'return_loan');
-        formdata.set('identifier', thisfileid);
+        formdata.set('identifier', this.fileid);
 
         fetch(uri, {
             method: "POST",

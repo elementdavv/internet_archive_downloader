@@ -8,8 +8,8 @@
 (() => {
     var step = 0;
     const STEPLIMIT = 8;
-    const origin = location.origin;
-    const extid = document.currentScript.src.match(/[\-0-9a-z]+/g)[1];
+    const src = document.currentScript.src;
+    const tabid = src.substr(src.indexOf('=') + 1);
 
     const getBr = () => {
         const br = {};
@@ -67,7 +67,7 @@
             intervalid = null;
 
             if (st == 2) {
-                window.postMessage({extid, cmd: 'init', br: getBr()}, origin);
+                window.postMessage({ tabid, cmd: 'init', br: getBr() });
             }
         }
     }

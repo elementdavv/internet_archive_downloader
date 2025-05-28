@@ -19,7 +19,7 @@ export default class Hathitrust1 extends Base {
 
     setup() {
         this.loadFont = this.loadFont1;
-        this.loadScript("/js/stub1.js");
+        this.loadScript("/js/stub1.js?tabid=" + this.tabid);
     }
 
     async loadButtons(href) {
@@ -30,7 +30,7 @@ export default class Hathitrust1 extends Base {
         const btnurl = chrome.runtime.getURL(href);
         const resp = await fetch(btnurl);
         let html = await resp.text();
-        const buttonid = `${(new Date()).getTime()}-${Math.ceil(Math.random() * 1e3)}`;
+        const buttonid = this.tabid;
         html = html.replaceAll('${buttonid}', buttonid);
         const ac = fromId('controls')?.getElementsByClassName("border-top");
         ac[0]?.insertAdjacentHTML("afterend", html);

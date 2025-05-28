@@ -79,20 +79,22 @@ export default {
     const baseline = 'alphabetic';
     const lineBinds = this.getAllLineBinds(xmldoc, xratio);
     let l = 0;
-
     const pars = xmldoc.querySelectorAll(this.PARAGRAPH);
+
     pars.forEach( par => {
         const fs = this.getFs(par, yratio);
         if (!fs) return;
 
         const lines = par.querySelectorAll(this.LINE);
+
         lines.forEach( line => {
             const wy = this.getLineY(line, yratio, fs);
             if (!wy) return;
 
-            const {overlaps, percent} = this.getOverLaps(fs, line, lineBinds[l++], xratio);
+            const {overlaps, percent} = this.getOverLaps(fs, line, lineBinds[l++], 0, w, xratio);
             this.fontSize(Math.floor(fs * percent));
             let word = line.firstElementChild;
+
             while (word) {
                 // calculate word position x
                 const coords = word.attributes[this.COORDS].value.split(this.DELIMITER);
@@ -130,35 +132,42 @@ export default {
         return { maxwidth, maxheight };
     },
 
-    getOverLaps(fs, line, bs, xratio) {
+    getOverLaps(fs, line, bs, left, right, xratio) {
         let loopcount = 0, percent = 1;
+
         while (true) {
-            let res = this.loopOverLaps(fs * percent, line, bs, xratio);
+            let res = this.loopOverLaps(fs * percent, line, bs, left, right, xratio);
             percent *= res.percent;
-            if (res.percent >= 0.95 || ++loopcount >= 3) {
+
+            if (res.percent >= 0.95 || ++loopcount > 3) {
                 return {overlaps: res.overlaps, percent};
             }
         }
     },
 
     // calculate word overlap in a line, text direction accounted
-    loopOverLaps(fs, line, bs, xratio) {
+    loopOverLaps(fs, line, bs, left, right, xratio) {
         let {l, r} = bs;
         let overlaps = [], percent = 1;
         let lap = 0, lfree = 0, nx = 0;
         let p1 = this.rtl ? 2 : 0;
         this.fontSize(Math.floor(fs));
         let word = line.firstElementChild;
+
         while (word) {
             let wx = nx;
-            if (wx == 0)
+
+            if (wx == 0) {
                 wx = parseFloat(word.attributes[this.COORDS].value.split(this.DELIMITER)[p1]) * xratio;
+            }
+
             if (!word.previousElementSibling) {
                 lfree = this.rtl ? wx - r : wx - l;
                 overlaps.push(lap);
             }
             const wos = this.widthOfString(word.textContent);
             const nw = word.nextElementSibling;
+
             if (nw) {
                 nx = parseFloat(nw.attributes[this.COORDS].value.split(this.DELIMITER)[p1]) * xratio;
                 lap += this.rtl ? wx - wos - nx : wx + wos - nx;
@@ -168,15 +177,22 @@ export default {
             }
             else {
                 lap += this.rtl ? wx - wos - l : wx + wos - r;
+
                 if ((!this.rtl && lap > 0) || (this.rtl && lap < 0)) {
                     const afree = lfree - lap;
                     let offs = 0;
+
                     if ((!this.rtl && afree >= 0) || (this.rtl && afree <= 0)) {
-                        offs = lap;
+                        offs += lap;
                     }
                     else {
-                        offs = lfree;
+                        offs += lfree;
                         percent = (r - l) / (r - l + Math.abs(afree));
+                        lap += this.rtl ? l - left : r - right;
+
+                        if ((!this.rtl && lap > 0) || (this.rtl && lap < 0)) {
+                            offs += lap + (this.rtl ? -10 : 10);
+                        }
                     }
                     if (Math.abs(offs) > 0.1)
                         overlaps = overlaps.map(x => x - offs);
@@ -191,7 +207,9 @@ export default {
     getLineY(line, yratio, fs) {
         const words = line.querySelectorAll(this.WORD);
         if (words.length == 0) return null;
+
         const lys = [];
+
         words.forEach((word) => {
             const coords = word.attributes[this.COORDS].value.split(this.DELIMITER);
             const wb = parseFloat(this.service == 1 ? coords[1] : coords[3]);
@@ -207,7 +225,9 @@ export default {
     getFs(par, yratio) {
         const words = par.querySelectorAll(this.WORD);
         if (words.length == 0) return null;
+
         let whs = [];
+
         words.forEach((word) => {
             const coords = word.attributes[this.COORDS].value.split(this.DELIMITER);
             const wh = Math.abs(parseFloat(coords[3]) - parseFloat(coords[1]));
@@ -225,16 +245,20 @@ export default {
         const lbs = new Array(lbox.length);
         let i = 0;
         const lines = xmldoc.querySelectorAll(this.LINE);
+
         for (let m = 0; m < lines.length; m++) {
             const line = lines[m];
+
             if (line.childElementCount > 0) {
                 const box = lbox[i];
                 let bs = this.getLineBind(lbs, i, box.x1, box.x2);
                 let j = i, n = m;
                 let line2 = lines[++n];
+
                 while (line2) {
                     if (line2.childElementCount > 0) {
                         const box2 = lbox[++j];
+
                         if (!this.boxCompatible(box, box2)) {
                             let bs2 = this.getLineBind(lbs, j, box2.x1, box2.x2);
                             this.fitBind(box, box2, bs, bs2);
@@ -286,6 +310,7 @@ export default {
     // l, r: default value
     getLineBind(lbs, i, l, r) {
         let bs = lbs[i];
+
         if (!bs) {
             bs = {l, r};
             lbs[i] = bs;
@@ -297,6 +322,7 @@ export default {
     getAllLineBox(xmldoc) {
         const lines = xmldoc.querySelectorAll(this.LINE);
         const lbox = [];
+
         lines.forEach( line => {
             const box = this.getLineBox(line);
             if (box) {
@@ -310,7 +336,9 @@ export default {
     getLineBox(line) {
         const words = line.querySelectorAll(this.WORD);
         if (words.length == 0) return null;
+
         let x1 = Number.MAX_VALUE, y1 = Number.MAX_VALUE, x2 = 0, y2 = 0;
+
         words.forEach( word => {
             const coords = word.attributes[this.COORDS].value.split(this.DELIMITER);
             x1 = Math.min(x1, parseFloat(coords[0]));
@@ -330,7 +358,9 @@ export default {
     // remove one abnormal value in a array if exist
     rmOddValue(arr) {
         if (arr.ength < 3) return;
+
         const sum = arr.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
+
         for (let i = 0; i < arr.length; i++) {
             const x = arr[i];
             const aver = (sum - x) / (arr.length - 1);
@@ -349,6 +379,7 @@ export default {
     // numbers should not be reversed
     rtl2ltr(str) {
         const arr = str.split(/([\d.]+)/g);         // split out numbers
+
         for (let i = 0; i < arr.length; i++) {
             let ar = arr[i];
             if (!(/^[\d.]+$/.test(ar))) {
@@ -370,6 +401,7 @@ export default {
             '}': '{',
         };
         const arr = Array.from(str);
+
         for (let i = 0; i < arr.length; i++) {
             if (marks[arr[i]]) {
                 arr[i] = marks[arr[i]];
