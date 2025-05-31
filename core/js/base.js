@@ -7,21 +7,23 @@
 
 import './utils/streamsaver.js';
 import Queue from './utils/queue.js';
-import ImageDecoder from './utils/image_decoder.js';
+import TBuf from './utils/tbuf.js';
 import PDFDocument from './pdf/document.js';
 import ZIPDocument from './zip/document.js';
 
 'use strict';
 
-const ENFONT = '/js/pdf/font/data/Georgia.afm';                                         // default font
-const MITM = 'https://elementdavv.github.io/streamsaver.js/mitm.html?version=2.0.0';    // streamsaver mitm self host
-const sw = !window.showSaveFilePicker;                                                  // is using service worker
-const ff = /Firefox/.test(navigator.userAgent);                                         // is firefox
-var t = 0;                                                                              // performance now
+const sw = !window.showSaveFilePicker;                  // is using service worker
+const ff = /Firefox/.test(navigator.userAgent);         // is firefox
 
 export default class Base {
     constructor() {
         this.tabid = `${(new Date()).getTime()}-${Math.ceil(Math.random() * 1e3)}`.toString();
+        this.cssData = '/css/iad.css';
+        this.ponyfill = './utils/ponyfill-writablestream.es6.js';
+        this.enFont = '/js/pdf/font/data/Georgia.afm';
+        this.mitm = 'https://elementdavv.github.io/streamsaver.js/mitm.html?version=2.0.0';
+
         this.br = {};               // book reader
         this.status = 0;            // 0:idle, 1:downloading, 2:completed, 3:failed, 4:server complain waiting
         this.ctrl = false;          // ctrlKey
@@ -93,10 +95,10 @@ export default class Base {
             });
         }
         if (sw) {
-            streamSaver.mitm = MITM;
+            streamSaver.mitm = this.mitm;
         }
         if (ff) {
-            import('./utils/ponyfill-writablestream.es6.js').then(ponyfill => {
+            import(this.ponyfill).then( () => {
                 // native TransformStream and WritableStream only work in firefox 113, use ponyfill instead
                 streamSaver.supportsTransferable = false;
                 streamSaver.WritableStream = globalThis.WebStreamsPolyfill.WritableStream;
@@ -104,6 +106,8 @@ export default class Base {
         }
         const manifest = chrome.runtime.getManifest();
         console.log(`${manifest.name} ${manifest.version} in action`);
+        console.log(navigator.userAgent);
+        console.log(`isBrave: ${navigator.brave && typeof navigator.brave.isBrave == 'function' ? true : false}`);
     }
 
     onmessage(evt) {
@@ -115,7 +119,8 @@ export default class Base {
         switch(edata.cmd) {
         case 'init':
             that.br = JSON.parse(edata.br); 
-            if (ff && sw) streamSaver.testSw(that.br.swInNavigator);
+            // in firefox, service worker is not visible to content script, so test it from web page
+            if (sw) streamSaver.testSw(that.br.swInNavigator);
             that.init();
             break;
         default:
@@ -152,16 +157,19 @@ export default class Base {
     }
 
     async loadFont1() {
+        if (this.font) return ;
+
         console.log('load font data');
         this.font = 'Times-Roman';
-        const fonturl = chrome.runtime.getURL(ENFONT);
+        const fonturl = chrome.runtime.getURL(this.enFont);
         const response = await fetch(fonturl);
         this.fontdata = await response.text();
         console.log('    default font data loaded');
-        this.download();
     }
 
     async loadFont2() {
+        if (this.font) return ;
+
         console.log('load font data');
         let langs = [];
 
@@ -172,52 +180,58 @@ export default class Base {
             langs = await this.Lang.getLangs(this.info);
             this.lang = langs[0];
         }
-        var fonturl = this.Lang.getFontUrl( langs );
+        let fonturl = this.Lang.getFontUrl( langs );
 
         if (!fonturl) {
-            this.postLoadFont(null);
+            await this.postLoadFont(null);
             return;
         }
-        var base64 = await chrome.storage.local.get({ [fonturl]: null });
+        let base64 = await chrome.storage.local.get({ [fonturl]: null });
 
         if (base64[fonturl]) {
-            this.postLoadFont(base64[fonturl]);
+            await this.postLoadFont(base64[fonturl]);
         }
         else {
             let fname = fonturl.substr(fonturl.lastIndexOf('/') + 1);
-            console.log('    download ' + fname);
+            console.log('    download font: ' + fname);
+            const response = await fetch(fonturl, { responseType: 'arraybuffer' });
 
-            chrome.runtime.sendMessage({ cmd: 'fetch', fonturl }, response => {
-                if (response.ok) {
-                    console.log('    download complete');
+            if (response.ok) {
+                console.log('    download complete');
+                const buffer = await response.arrayBuffer();
 
-                    chrome.storage.local.get({ [fonturl]: null }).then(base64 => {
-                        this.postLoadFont(base64[fonturl]);
-                    });
-                }
-                else {
-                    console.log('    download fail, fallback to default font');
-                    this.postLoadFont(null);
-                }
-            });
+                TBuf.bufferToBase64(buffer).then( base64 => {
+                    chrome.storage.local.set({ [fonturl]: base64 });
+                });
+
+                await this.postLoadFont(buffer);
+            }
+            else {
+                console.log('    download fail, fallback to default font');
+                await this.postLoadFont(null);
+            }
         }
     }
 
     async postLoadFont(base64) {
         if (!base64) {
             this.font = 'Times-Roman';
-            const fonturl = chrome.runtime.getURL(ENFONT);
+            const fonturl = chrome.runtime.getURL(this.enFont);
             const response = await fetch(fonturl);
             this.fontdata = await response.text();
             console.log('    default font data loaded');
         }
         else {
             this.font = this.lang;
-            this.fontdata = await this.TBuf.base64ToBuffer(base64);
+            if (typeof base64 == 'string') {
+                this.fontdata = await TBuf.base64ToBuffer(base64);
+            }
+            else {
+                this.fontdata = base64;
+            }
             console.log('    font data loaded');
         }
         if (this.lang == '(unknown)') this.lang = null;
-        this.download();
     }
 
     getProgress() {
@@ -227,9 +241,8 @@ export default class Base {
 
     async init() {
         console.log('init begin');
-        this.loadCss('/css/iad.css');
-        const btnData = this.service == 1 ? '/page/btnData.html' : '/page/btnData1.html' ;
-        await this.loadButtons( btnData );
+        this.loadCss( this.cssData );
+        await this.loadButtons( this.btnData );
         this.configButtons();
         this.getBookInfo();
         this.getProgress();
@@ -265,12 +278,11 @@ export default class Base {
                 await this.clean();
                 this.getDownloadInfo();
 
-                if (this.ctrl || !this.getMetadata()) {
-                    this.download();
+                if (!this.ctrl) {
+                    this.getMetadata();
+                    await this.loadFont();
                 }
-                else {
-                    this.loadFont();
-                }
+                this.download();
             }
             else {
                 console.log('    download canceled');
@@ -513,14 +525,7 @@ export default class Base {
             if (!response.ok) {
                 throw new Error(response.status);
             }
-            let buffer = null;
-
-            if (this.service == 1) {
-                buffer = await ImageDecoder.decodeArchiveImage(response);
-            }
-            else {
-                buffer = await response.arrayBuffer();
-            }
+            const buffer = await this.decodeImage(response);
             const view = new DataView(buffer);
 
             const response2 = await fetch(uri2, {
@@ -628,7 +633,7 @@ export default class Base {
 
     createPDFPage(view, text, pageindex, width, height) {
         pageindex -= this.startp - 1;
-        const options = {pageindex, x:0, y:0, width, height, service: this.service, };
+        const options = { pageindex, x:0, y:0, width, height, };
         this.doc.image(view, text, options);
     }
 
@@ -673,7 +678,7 @@ export default class Base {
     }
 
     pickOptions( description, accept ) {
-        return options = {
+        return {
             startIn: 'downloads',
             suggestedName: this.filename,
             types: [
@@ -691,28 +696,25 @@ export default class Base {
     }
 
     getContent() {
-        let PARAGRAPH = this.service == 1 ? 'PARAGRAPH' : '.ocr_par';
-        let LINE = this.service == 1 ? 'LINE' : '.ocr_line';
-        let WORD = this.service == 1 ? 'WORD' : '.ocrx_word';
-        let result = '', xmldoc, pars, page, lines, words, t;
+        let result = '', xmldoc, pars, page, lines, words, l;
 
         this.content.forEach((text) => {
             xmldoc = new DOMParser().parseFromString(text, 'text/xml');
-            pars = xmldoc.querySelectorAll(PARAGRAPH);
+            pars = xmldoc.querySelectorAll(this.PARAGRAPH);
             page = '';
 
             pars.forEach((par) => {
-                lines = par.querySelectorAll(LINE);
+                lines = par.querySelectorAll(this.LINE);
 
                 lines.forEach((line) => {
-                    words = line.querySelectorAll(WORD);
-                    t = '';
+                    words = line.querySelectorAll(this.WORD);
+                    l = '';
 
                     words.forEach((word) => {
-                        if (t != '') t += ' ';
-                        t += word.textContent;
+                        if (l != '') l += ' ';
+                        l += word.textContent;
                     });
-                    page += t + '\n';
+                    page += l + '\n';
                 });
                 page += '\n';
             });
@@ -773,6 +775,8 @@ function fromId(id) {
 function getMessage(messageName, substitutions) {
     return chrome.i18n.getMessage(messageName, substitutions);
 }
+
+var t = 0;
 
 function teststart() {
     t = performance.now();

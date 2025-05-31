@@ -6,19 +6,26 @@
  */
 
 import Base from './base.js';
+import ImageDecoder from './utils/image_decoder.js';
 
 'use strict';
   
 export default class Archive1 extends Base {
     constructor() {
         super();
-        this.service = 1;
+        this.btnData = '/page/btnData.html';
+        this.stubUrl = '/js/stub.js?tabid=' + this.tabid;
+        this.PARAGRAPH = 'PARAGRAPH';
+        this.LINE = 'LINE';
+        this.WORD = 'WORD';
+        this.COORDS = 'coords';
+        this.DELIMITER = ',';
         this.data = [];              // page image urls
     }
 
     setup() {
         this.loadFont = this.loadFont1;
-        this.loadScript("/js/stub.js?tabid=" + this.tabid);
+        this.loadScript(this.stubUrl);
     }
 
     async loadButtons(href) {
@@ -74,11 +81,11 @@ export default class Archive1 extends Base {
     }
 
     getMetadata() {
-        if (this.info) return false;
+        if (this.info) return ;
 
         console.log('get metadata');
-        this.info = {};
-        this.info.Title = this.br.bookTitle;
+        let info = {};
+        info.Title = this.br.bookTitle;
         const meta = new Map();
         meta.set('by', 'Author');
         meta.set('Publication date', 'PublicationDate')
@@ -92,11 +99,11 @@ export default class Archive1 extends Base {
             const metaname = metadata[i].children[0].innerText;
 
             if (meta.has(metaname)) {
-                this.info[meta.get(metaname)] = metadata[i].children[1].innerText;
+                info[meta.get(metaname)] = metadata[i].children[1].innerText;
             }
         }
-        this.info.Application = chrome.runtime.getManifest().name;
-        return true;
+        info.Application = chrome.runtime.getManifest().name;
+        this.info = info;
     }
 
     getDownloadInfo() {
@@ -124,6 +131,21 @@ export default class Archive1 extends Base {
         const width = Math.ceil(data[pageindex].width / scale);
         const height = Math.ceil(data[pageindex].height / scale);
         this.syncfetch(pageindex, tri, uri, uri2, width, height);
+    }
+
+    async decodeImage(response) {
+        return await ImageDecoder.decodeArchiveImage(response);
+    }
+
+    getMaxDim(xmldoc) {
+        let maxwidth = 0, maxheight = 0;
+        let tag = xmldoc.getElementsByTagName('OBJECT');
+
+        if (tag != null && tag.length > 0) {
+            maxwidth = parseFloat(tag[0].attributes['width'].value);
+            maxheight = parseFloat(tag[0].attributes['height'].value);
+        }
+        return { maxwidth, maxheight };
     }
 
     returnBook() {

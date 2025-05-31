@@ -1,1 +1,1 @@
-../../../core/js/utils/streamsaver_moz.js
+../../../core/js/utils/streamsaver.js

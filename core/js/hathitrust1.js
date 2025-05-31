@@ -12,14 +12,20 @@ import Base from './base.js';
 export default class Hathitrust1 extends Base {
     constructor() {
         super();
-        this.service = 2;
+        this.btnData = '/page/btnData1.html';
+        this.stubUrl = '/js/stub1.js?tabid=' + this.tabid;
+        this.PARAGRAPH = '.ocr_par';
+        this.LINE = '.ocr_line';
+        this.WORD = '.ocrx_word';
+        this.COORDS = 'data-coords';
+        this.DELIMITER = ' ';
         this.url = '';               // page image urls
         this.toohot = null;          // wait for server cooling
     }
 
     setup() {
         this.loadFont = this.loadFont1;
-        this.loadScript("/js/stub1.js?tabid=" + this.tabid);
+        this.loadScript(this.stubUrl);
     }
 
     async loadButtons(href) {
@@ -69,7 +75,7 @@ export default class Hathitrust1 extends Base {
     }
 
     getMetadata() {
-        if (this.info) return false;
+        if (this.info) return ;
 
         let br = this.br;
         console.log('get metadata');
@@ -80,7 +86,6 @@ export default class Hathitrust1 extends Base {
         if (br.metadata.publicationDate) info.PublicationDate = br.metadata.publicationDate;
         info.Application = chrome.runtime.getManifest().name;
         this.info = info;
-        return true;
     }
 
     getDownloadInfo() {
@@ -145,6 +150,22 @@ export default class Hathitrust1 extends Base {
         var uri = this.url + `&seq=` + (pageindex + this.br.firstPageSeq) + '&' + this.scale;
         var uri2 = this.url2 + `&seq=` + (pageindex + this.br.firstPageSeq);
         this.syncfetch(pageindex, tri, uri, uri2);
+    }
+
+    async decodeImage(response) {
+        return await response.arrayBuffer();
+    }
+
+    getMaxDim(xmldoc) {
+        let maxwidth = 0, maxheight = 0;
+        let tag = xmldoc.getElementsByTagName('div');
+
+        if (tag != null && tag.length > 0) {
+            let coords = tag[0].attributes[this.COORDS].value.split(this.DELIMITER);
+            maxwidth = parseFloat(coords[2]);
+            maxheight = parseFloat(coords[3]);
+        }
+        return { maxwidth, maxheight };
     }
 
     waitnotify() {

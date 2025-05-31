@@ -57,35 +57,29 @@ export default {
     this.addContent(`/${image.label} Do`);
     this.restore();
 
-    this.service = options.service ;
     if (text == null || text == '') return this;
-    if (this.service == 1 && text.indexOf('OBJECT') == -1) return this;
 
-    this.opacity(0.0);
+    this.that = window.internetarchivedownloader ;
+    let that = this.that;
     const xmldoc = new DOMParser().parseFromString(text, 'text/xml');
-    this.PARAGRAPH = this.service == 1 ? 'PARAGRAPH' : '.ocr_par';
-    this.LINE = this.service == 1 ? 'LINE' : '.ocr_line';
-    this.WORD = this.service == 1 ? 'WORD' : '.ocrx_word';
-    this.COORDS = this.service == 1 ? 'coords' : 'data-coords';
-    this.DELIMITER = this.service == 1 ? ',' : ' ';
-    const { maxwidth, maxheight } = this.getMaxDim(xmldoc);
+    const { maxwidth, maxheight } = that.getMaxDim(xmldoc);
 
     if ( maxwidth == 0 ) {
         return this;
     }
     const xratio = w / maxwidth;
     const yratio = h / maxheight;
-
+    this.opacity(0.0);
     const baseline = 'alphabetic';
     const lineBinds = this.getAllLineBinds(xmldoc, xratio);
     let l = 0;
-    const pars = xmldoc.querySelectorAll(this.PARAGRAPH);
+    const pars = xmldoc.querySelectorAll(that.PARAGRAPH);
 
     pars.forEach( par => {
         const fs = this.getFs(par, yratio);
         if (!fs) return;
 
-        const lines = par.querySelectorAll(this.LINE);
+        const lines = par.querySelectorAll(that.LINE);
 
         lines.forEach( line => {
             const wy = this.getLineY(line, yratio, fs);
@@ -97,7 +91,7 @@ export default {
 
             while (word) {
                 // calculate word position x
-                const coords = word.attributes[this.COORDS].value.split(this.DELIMITER);
+                const coords = word.attributes[that.COORDS].value.split(that.DELIMITER);
                 let wx = parseFloat(coords[0]) * xratio;
                 const lineWidth = parseFloat(coords[2]) * xratio - wx;      // named by font context
                 wx += overlaps.shift();
@@ -108,29 +102,6 @@ export default {
     });
     return this;
   },
-
-    getMaxDim(xmldoc) {
-        let maxwidth = 0, maxheight = 0;
-
-        if (this.service == 1) {
-            let tag = xmldoc.getElementsByTagName('OBJECT');
-
-            if (tag != null && tag.length > 0) {
-                maxwidth = parseFloat(tag[0].attributes['width'].value);
-                maxheight = parseFloat(tag[0].attributes['height'].value);
-            }
-        }
-        else {
-            let tag = xmldoc.getElementsByTagName('div');
-
-            if (tag != null && tag.length > 0) {
-                let coords = tag[0].attributes[this.COORDS].value.split(this.DELIMITER);
-                maxwidth = parseFloat(coords[2]);
-                maxheight = parseFloat(coords[3]);
-            }
-        }
-        return { maxwidth, maxheight };
-    },
 
     getOverLaps(fs, line, bs, left, right, xratio) {
         let loopcount = 0, percent = 1;
@@ -147,6 +118,7 @@ export default {
 
     // calculate word overlap in a line, text direction accounted
     loopOverLaps(fs, line, bs, left, right, xratio) {
+        let that = this.that;
         let {l, r} = bs;
         let overlaps = [], percent = 1;
         let lap = 0, lfree = 0, nx = 0;
@@ -158,7 +130,7 @@ export default {
             let wx = nx;
 
             if (wx == 0) {
-                wx = parseFloat(word.attributes[this.COORDS].value.split(this.DELIMITER)[p1]) * xratio;
+                wx = parseFloat(word.attributes[that.COORDS].value.split(that.DELIMITER)[p1]) * xratio;
             }
 
             if (!word.previousElementSibling) {
@@ -169,7 +141,7 @@ export default {
             const nw = word.nextElementSibling;
 
             if (nw) {
-                nx = parseFloat(nw.attributes[this.COORDS].value.split(this.DELIMITER)[p1]) * xratio;
+                nx = parseFloat(nw.attributes[that.COORDS].value.split(that.DELIMITER)[p1]) * xratio;
                 lap += this.rtl ? wx - wos - nx : wx + wos - nx;
                 if (!this.rtl && lap < 0) lap = 0;
                 if (this.rtl && lap > 0) lap = 0;
@@ -205,14 +177,15 @@ export default {
 
     // calculate line position y
     getLineY(line, yratio, fs) {
-        const words = line.querySelectorAll(this.WORD);
+        let that = this.that;
+        const words = line.querySelectorAll(that.WORD);
         if (words.length == 0) return null;
 
         const lys = [];
 
         words.forEach((word) => {
-            const coords = word.attributes[this.COORDS].value.split(this.DELIMITER);
-            const wb = parseFloat(this.service == 1 ? coords[1] : coords[3]);
+            const coords = word.attributes[that.COORDS].value.split(that.DELIMITER);
+            const wb = parseFloat(Math.max(coords[1], coords[3]));
             lys.push(wb);
         });
         lys.sort((a, b) => a - b);
@@ -223,13 +196,14 @@ export default {
 
     // calculate paragraph fontsize
     getFs(par, yratio) {
-        const words = par.querySelectorAll(this.WORD);
+        let that = this.that;
+        const words = par.querySelectorAll(that.WORD);
         if (words.length == 0) return null;
 
         let whs = [];
 
         words.forEach((word) => {
-            const coords = word.attributes[this.COORDS].value.split(this.DELIMITER);
+            const coords = word.attributes[that.COORDS].value.split(that.DELIMITER);
             const wh = Math.abs(parseFloat(coords[3]) - parseFloat(coords[1]));
             whs.push(wh);
         });
@@ -244,7 +218,7 @@ export default {
         const lbox = this.getAllLineBox(xmldoc);
         const lbs = new Array(lbox.length);
         let i = 0;
-        const lines = xmldoc.querySelectorAll(this.LINE);
+        const lines = xmldoc.querySelectorAll(this.that.LINE);
 
         for (let m = 0; m < lines.length; m++) {
             const line = lines[m];
@@ -320,7 +294,7 @@ export default {
 
     // calculate all line box
     getAllLineBox(xmldoc) {
-        const lines = xmldoc.querySelectorAll(this.LINE);
+        const lines = xmldoc.querySelectorAll(this.that.LINE);
         const lbox = [];
 
         lines.forEach( line => {
@@ -334,17 +308,18 @@ export default {
 
     // calculate line box
     getLineBox(line) {
-        const words = line.querySelectorAll(this.WORD);
+        let that = this.that;
+        const words = line.querySelectorAll(that.WORD);
         if (words.length == 0) return null;
 
         let x1 = Number.MAX_VALUE, y1 = Number.MAX_VALUE, x2 = 0, y2 = 0;
 
         words.forEach( word => {
-            const coords = word.attributes[this.COORDS].value.split(this.DELIMITER);
+            const coords = word.attributes[that.COORDS].value.split(that.DELIMITER);
             x1 = Math.min(x1, parseFloat(coords[0]));
-            y1 = Math.min(y1, parseFloat(this.service == 1 ? coords[3] : coords[1]));
+            y1 = Math.min(y1, parseFloat(Math.min(coords[1], coords[3])));
             x2 = Math.max(x2, parseFloat(coords[2]));
-            y2 = Math.max(y2, parseFloat(this.service == 1 ? coords[1] : coords[3]));
+            y2 = Math.max(y2, parseFloat(Math.max(coords[1], coords[3])));
         });
         return {x1, y1, x2, y2};
     },
