@@ -41,10 +41,8 @@ export default class Hathitrust1 extends Base {
         const ac = fromId('controls')?.getElementsByClassName("border-top");
         ac[0]?.insertAdjacentHTML("afterend", html);
         fromId('iadbuttonid').addEventListener('click', this.iadDownload);
-    }
-
-    configButtons() {
-        this.configScales();
+        fromId('iadscaleid').addEventListener('input', this.iadOnScale);
+        fromId('iadtasksid').addEventListener('input', this.iadOnTasks);
     }
 
     configScales() {
@@ -52,6 +50,7 @@ export default class Hathitrust1 extends Base {
         var s = fromId('iadscaleid');
         if (!s) return;
 
+        let fc = s.firstChild;
         var n = 3;
 
         while (n > 0) {
@@ -60,9 +59,33 @@ export default class Hathitrust1 extends Base {
             o.value = 'height=' + v;
             o.innerText = 'height: ' + v;
             if (n == 3) o.selected = true;
-            s.appendChild(o);
+            s.insertBefore(o, fc);
             n--;
         }
+    }
+
+    updategTasks(tasks) {
+        console.log('update tasks');
+        var s = fromId('iadtasksid');
+        if (!s) return;
+
+        const options = s.options;
+
+        for (let i = 0; i < options.length; i++) {
+            if (options[i].value == tasks) {
+                options[i].selected = true;
+                return;
+            }
+        }
+    }
+
+    iadOnTasks(e) {
+        console.log('on tasks');
+        chrome.runtime.sendMessage({
+            cmd: 'setting',
+            name: 'tasks',
+            value: Number(this.options[this.selectedIndex].value),
+        });
     }
 
     getBookInfo() {
@@ -84,7 +107,7 @@ export default class Hathitrust1 extends Base {
         if (br.metadata.author) info.Author = br.metadata.author;
         if (br.metadata.publisher) info.Publisher = br.metadata.publisher;
         if (br.metadata.publicationDate) info.PublicationDate = br.metadata.publicationDate;
-        info.Application = chrome.runtime.getManifest().name;
+        info.Application = this.manifest.name;
         this.info = info;
     }
 
@@ -94,7 +117,7 @@ export default class Hathitrust1 extends Base {
         this.tasks = parseInt(fromId('iadtasksid').value);
         this.filename = this.fileid + '_';
         this.filename += this.scale.indexOf('full') > -1 ? 'full' : this.scale.substring(7);
-        this.filename += this.alt ? `_${this.startp}_${this.endp}` : '';
+        this.filename += (this.alt || this.settings.range) ? `_${this.startp}_${this.endp}` : '';
         this.filename += this.ctrl ? '.zip' : '.pdf';
     }
 
@@ -166,6 +189,14 @@ export default class Hathitrust1 extends Base {
             maxheight = parseFloat(coords[3]);
         }
         return { maxwidth, maxheight };
+    }
+
+    removeProgressIcon() {
+        this.progressicon.classList.remove('fa-solid', 'fa-arrow-down');
+    }
+
+    addProgressIcon() {
+        this.progressicon.classList.add('fa-solid', 'fa-arrow-down');
     }
 
     waitnotify() {

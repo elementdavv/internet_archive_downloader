@@ -39,10 +39,7 @@ export default class Archive1 extends Base {
         const ab = fromClass('action-buttons-section');
         ab[0]?.insertAdjacentHTML("afterbegin", html);
         fromId('iadbuttonid').addEventListener('click', this.iadDownload);
-    }
-
-    configButtons() {
-        this.configScales();
+        fromId('iadscaleid').addEventListener('input', this.iadOnScale);
     }
 
     configScales() {
@@ -65,10 +62,14 @@ export default class Archive1 extends Base {
                     o.innerText = star.substring(++n);
                     s.appendChild(o);
                 }
-
                 lastscale = scal;
             }
         });
+    }
+
+    updategTasks(tasks) {
+        console.log('update tasks');
+        this.tasks = tasks;
     }
 
     getBookInfo() {
@@ -102,7 +103,7 @@ export default class Archive1 extends Base {
                 info[meta.get(metaname)] = metadata[i].children[1].innerText;
             }
         }
-        info.Application = chrome.runtime.getManifest().name;
+        info.Application = this.manifest.name;
         this.info = info;
     }
 
@@ -111,7 +112,7 @@ export default class Archive1 extends Base {
         this.scale = fromId('iadscaleid').value;
         this.filename = this.fileid + '_';
         this.filename += this.scale;
-        this.filename += this.alt ? `_${this.startp}_${this.endp}` : '';
+        this.filename += (this.alt || this.settings.range) ? `_${this.startp}_${this.endp}` : '';
         this.filename += this.ctrl ? '.zip' : '.pdf';
     }
 
@@ -149,7 +150,7 @@ export default class Archive1 extends Base {
     }
 
     returnBook() {
-        if (!this.br.protected) return;
+        if (!this.br.protected || !this.settings.retern) return;
 
         console.log('return the book.');
         const uri = 'https://archive.org/services/loans/loan';
@@ -170,6 +171,14 @@ export default class Archive1 extends Base {
                 throw new Error(response.status);
             }
         }).catch(e=>console.log(e));
+    }
+
+    removeProgressIcon() {
+        this.progressicon.classList.remove('iconochive-download');
+    }
+
+    addProgressIcon() {
+        this.progressicon.classList.add('iconochive-download');
     }
 
     refreshTip() {

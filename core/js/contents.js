@@ -5,6 +5,8 @@
  * Distributed under terms of the GPL3 license.
  */
 
+'use strict';
+
 (() => {
     if (window.internetarchivedownloaderinit === true) {
         return;

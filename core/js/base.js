@@ -18,11 +18,13 @@ const ff = /Firefox/.test(navigator.userAgent);         // is firefox
 
 export default class Base {
     constructor() {
+        this.manifest = chrome.runtime.getManifest();
         this.tabid = `${(new Date()).getTime()}-${Math.ceil(Math.random() * 1e3)}`.toString();
         this.cssData = '/css/iad.css';
         this.ponyfill = './utils/ponyfill-writablestream.es6.js';
         this.enFont = '/js/pdf/font/data/Georgia.afm';
         this.mitm = 'https://elementdavv.github.io/streamsaver.js/mitm.html?version=2.0.0';
+        this.settings = {};
 
         this.br = {};               // book reader
         this.status = 0;            // 0:idle, 1:downloading, 2:completed, 3:failed, 4:server complain waiting
@@ -40,6 +42,7 @@ export default class Base {
         this.info = null;           // book metadata
 
         this.progress = null;       // progress bar
+        this.progressicon = null;   // progress icon
 
         this.swaitcreate = false;   // wait for sw file creation
 
@@ -70,10 +73,16 @@ export default class Base {
 
         window.onmessage = this.onmessage;
 
-        if (sw) {
-            chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-                if (sender.id != chrome.runtime.id || (this.status != 1 && this.swaitcreate == false)) return;
-                console.log(`message from browser: ${message.cmd}`);
+        chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+            if (sender.id != chrome.runtime.id) return;
+
+            console.log(`message from browser: ${message.cmd}`);
+
+            if (message.cmd == 'settings') {
+                this.updateSettings(message.settings);
+            }
+            else if (sw) {
+                if (this.status != 1 && this.swaitcreate == false) return;
 
                 switch(message.cmd) {
                 case 'create':
@@ -91,9 +100,9 @@ export default class Base {
                 default:
                     break;
                 }
-                sendResponse({});
-            });
-        }
+            }
+            sendResponse({});
+        });
         if (sw) {
             streamSaver.mitm = this.mitm;
         }
@@ -104,8 +113,7 @@ export default class Base {
                 streamSaver.WritableStream = globalThis.WebStreamsPolyfill.WritableStream;
             });
         }
-        const manifest = chrome.runtime.getManifest();
-        console.log(`${manifest.name} ${manifest.version} in action`);
+        console.log(`\n${this.manifest.name} ${this.manifest.version} in action`);
         console.log(navigator.userAgent);
         console.log(`isBrave: ${navigator.brave && typeof navigator.brave.isBrave == 'function' ? true : false}`);
     }
@@ -114,7 +122,7 @@ export default class Base {
         let that = window.internetarchivedownloader ;
         const edata = evt.data;
         if ( edata.tabid != that.tabid ) return;
-        console.log(`\nmessage from window: ${edata.cmd}`);
+        console.log(`message from window: ${edata.cmd}`);
 
         switch(edata.cmd) {
         case 'init':
@@ -132,7 +140,7 @@ export default class Base {
         console.log(`load script: ${href}`);
         var script = document.createElement('script');
         script.type = 'text/javascript';
-        script.src = chrome.runtime.getURL(href);
+        script.src = toUrl(href);
         document.head.appendChild(script);
     }
 
@@ -140,7 +148,7 @@ export default class Base {
         console.log(`load css: ${href}`);
         var link = document.createElement('link');
         link.rel = 'stylesheet';
-        link.href = chrome.runtime.getURL(href);
+        link.href = toUrl(href);
         document.head.appendChild(link);
     }
 
@@ -150,10 +158,19 @@ export default class Base {
         that.alt = false;
 
         if (that.status == 0) {
-            that.ctrl = e.ctrlKey || e.metaKey;
+            that.ctrl = e.ctrlKey || e.metaKey || that.settings.format;
             that.alt = e.altKey;
         }
         that.begin();
+    }
+
+    iadOnScale(e) {
+        console.log('on scale');
+        sendMessage({
+            cmd: 'setting',
+            name: 'quality',
+            value: this.selectedIndex + 1,
+        });
     }
 
     async loadFont1() {
@@ -161,7 +178,7 @@ export default class Base {
 
         console.log('load font data');
         this.font = 'Times-Roman';
-        const fonturl = chrome.runtime.getURL(this.enFont);
+        const fonturl = toUrl(this.enFont);
         const response = await fetch(fonturl);
         this.fontdata = await response.text();
         console.log('    default font data loaded');
@@ -203,7 +220,6 @@ export default class Base {
                 TBuf.bufferToBase64(buffer).then( base64 => {
                     chrome.storage.local.set({ [fonturl]: base64 });
                 });
-
                 await this.postLoadFont(buffer);
             }
             else {
@@ -216,7 +232,7 @@ export default class Base {
     async postLoadFont(base64) {
         if (!base64) {
             this.font = 'Times-Roman';
-            const fonturl = chrome.runtime.getURL(this.enFont);
+            const fonturl = toUrl(this.enFont);
             const response = await fetch(fonturl);
             this.fontdata = await response.text();
             console.log('    default font data loaded');
@@ -234,9 +250,18 @@ export default class Base {
         if (this.lang == '(unknown)') this.lang = null;
     }
 
+    configButtons() {
+        this.configScales();
+    }
+
     getProgress() {
         console.log('get progress');
         this.progress = fromId('iadprogressid');
+        this.progressicon = fromId('iadprogressicon');
+    }
+
+    getSettings() {
+        sendMessage({ cmd: 'settings' });
     }
 
     async init() {
@@ -247,8 +272,35 @@ export default class Base {
         this.getBookInfo();
         this.getProgress();
         this.readynotify();
+        this.getSettings();
         window.internetarchivedownloaderinit = true;
         console.log('init complete');
+    }
+
+    updateSettings(settings) {
+        this.settings = settings;
+        this.trylimit = settings.retry;
+        this.updateButtons(settings);
+
+        if (settings.range) {
+            this.endp = this.startp + settings.range - 1;            // end page, inclusive
+            if (this.endp > this.pagecount) this.endp = this.pagecount;
+        }
+    }
+
+    updateButtons(settings) {
+        this.updategScales(settings.quality);
+        this.updategTasks(settings.tasks);
+    }
+
+    updategScales(quality) {
+        console.log('update scales');
+        var s = fromId('iadscaleid');
+        if (!s) return;
+
+        const options = s.options;
+        if (quality > options.length) quality -= options.length;
+        options[quality - 1].selected = true;
     }
 
     async begin() {
@@ -300,6 +352,7 @@ export default class Base {
 
             // valid page range: 1-99999
             const pagea = inputpages.split(/^([0-9]{0,5})[,-]{1}([0-9]{0,5})$/);
+
             if (pagea.length != 4) {
                 console.log('    bad range');
                 alert(getMessage("invalidinput"));
@@ -310,7 +363,7 @@ export default class Base {
             startp = Math.max(p1, 1);
             endp = ( p2 == 0 || p2 > pagecount ) ? pagecount : p2 ;
         }
-        else {
+        else if (!this.settings.range) {
             startp = 1;
             endp = pagecount;
         }
@@ -410,7 +463,7 @@ export default class Base {
         try {
             if (sw) {
                 console.log('notify browser: new');
-                await chrome.runtime.sendMessage({cmd: 'new', fileid: this.filename});
+                await sendMessage({cmd: 'new', fileid: this.filename});
                 this.createDocSW();
             }
             else {
@@ -445,7 +498,10 @@ export default class Base {
         this.paused = 0;
         this.recover = 0;
         this.ac = new AbortController();
-        this.content = Array.from({length: this.realcount}, (v, i) => '');
+
+        if (this.settings.embed) {
+            this.content = Array.from({length: this.realcount}, (v, i) => '');
+        }
     }
 
     getLeafs() {
@@ -487,6 +543,8 @@ export default class Base {
                 if (this.endp > this.pagecount) this.endp = this.pagecount;
             }
             else {
+                this.startp = 1;
+                this.endp = this.settings.range || 100;
                 this.returnBook();
             }
         }
@@ -506,7 +564,6 @@ export default class Base {
         if (this.ctrl) {
             this.createZIPText();
         }
-
         this.ac = null;
         this.doc.end();
         await this.writer.ready;
@@ -527,18 +584,20 @@ export default class Base {
             }
             const buffer = await this.decodeImage(response);
             const view = new DataView(buffer);
+            let text = null;
 
-            const response2 = await fetch(uri2, {
-                method: "GET",
-                credentials: "include",
-                signal: this.ac.signal,
-            });
+            if (this.settings.embed) {
+                const response2 = await fetch(uri2, {
+                    method: "GET",
+                    credentials: "include",
+                    signal: this.ac.signal,
+                });
 
-            if (!response2.ok) {
-                throw new Error(response2.status);
+                if (!response2.ok) {
+                    throw new Error(response2.status);
+                }
+                text = await response2.text();
             }
-
-            const text = await response2.text();
             this.createPage(view, text, pageindex, width, height);
             this.nextLeaf();
         }
@@ -546,6 +605,7 @@ export default class Base {
             if (this.ac && !this.ac.signal.aborted) {
                 const message = e.toString();
                 console.log(e);
+
                 // chrome: failed to fetch
                 // firefox: networkerror when fetch resource
                 // server complain: frequent access (hathitrust)
@@ -586,7 +646,7 @@ export default class Base {
     async abortdoc(extra) {
         if (extra?.sync) {
             console.log('notify browser: abort');
-            await chrome.runtime.sendMessage({cmd: 'abort'});
+            await sendMessage({cmd: 'abort'});
         }
         this.doc = null;
 
@@ -618,13 +678,17 @@ export default class Base {
     }
 
     createZIPPage(view, text, pageindex) {
-        this.content[pageindex - this.startp + 1] = text;
+        if (this.settings.embed) {
+            this.content[pageindex - this.startp + 1] = text;
+        }
         pageindex++;
         const name = this.fileid + '_' + pageindex.toString().padStart(4, '0');
         this.doc.image({view, name});
     }
 
     createZIPText() {
+        if (!this.settings.embed) return;
+
         const uint8 = new TextEncoder().encode(this.getContent());
         const view = new DataView(uint8.buffer);
         const name = this.fileid + '.txt';
@@ -633,7 +697,13 @@ export default class Base {
 
     createPDFPage(view, text, pageindex, width, height) {
         pageindex -= this.startp - 1;
-        const options = { pageindex, x:0, y:0, width, height, };
+        const options = {
+            pageindex,
+            x: 0,
+            y: 0,
+            width,
+            height,
+        };
         this.doc.image(view, text, options);
     }
 
@@ -681,9 +751,10 @@ export default class Base {
         return {
             startIn: 'downloads',
             suggestedName: this.filename,
-            types: [
-                { description, accept }
-            ],
+            types: [{
+                description,
+                accept,
+            }],
         };
     }
 
@@ -724,25 +795,55 @@ export default class Base {
         return result;
     }
 
+    notifyTray() {
+        if (!this.settings.notify) return;
+
+        const options = {
+            type: 'basic',
+            title: this.manifest.name,
+            iconUrl: toUrl( this.manifest.icons['128'] ),
+            message: `${this.filename}\x0dDownload complete.`,
+        };
+        const cmd = 'notify';
+        sendMessage({ cmd, options });
+    }
+
     startnotify() {
         console.log('start');
         teststart();
         this.progress.classList.add('iadprogress');
         this.progress.textContent = getMessage("downloading");
-        this.progress.style.width = '0%';
+        const percent = '0%';
+        this.progress.style.width = percent ;
+
+        if (this.settings.progress) {
+            this.removeProgressIcon();
+            this.progressicon.textContent = percent;
+        }
         this.refreshTip();
         this.status = 1;
     }
 
     updatenotify() {
-        this.progress.style.width = (this.complete / this.jobcount * 100) + '%';
+        const percent = Math.round(this.complete / this.jobcount * 100) + '%';
+        this.progress.style.width = percent;
+
+        if (this.settings.progress) {
+            this.progressicon.textContent = percent;
+        }
     }
 
     completenotify() {
+        this.notifyTray();
         const [m, s] = testend();
         console.log(`download completed in ${m}m${s}s`);
         this.progress.classList.remove('iadprogress');
         this.progress.textContent = getMessage("complete");
+
+        if (this.settings.progress) {
+            this.addProgressIcon();
+            this.progressicon.textContent = '';
+        }
         this.refreshTip();
         this.status = 2;
     }
@@ -751,6 +852,11 @@ export default class Base {
         console.log('failed');
         this.progress.classList.remove('iadprogress');
         this.progress.textContent = getMessage("fail");
+
+        if (this.settings.progress) {
+            this.addProgressIcon();
+            this.progressicon.textContent = '';
+        }
         this.refreshTip();
         this.status = 3;
     }
@@ -774,6 +880,14 @@ function fromId(id) {
 
 function getMessage(messageName, substitutions) {
     return chrome.i18n.getMessage(messageName, substitutions);
+}
+
+function sendMessage(options) {
+    chrome.runtime.sendMessage(options);
+}
+
+function toUrl(href) {
+    return chrome.runtime.getURL(href);
 }
 
 var t = 0;

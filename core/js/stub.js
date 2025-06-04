@@ -5,6 +5,8 @@
  * Distributed under terms of the GPL3 license.
  */
 
+'use strict';
+
 (() => {
     var step = 0;
     const STEPLIMIT = 8;
@@ -48,7 +50,6 @@
         else {
             console.log('done');
         }
-
         return r;
     }
 

@@ -5,8 +5,98 @@
  * Distributed under terms of the GPL3 license.
  */
 
+'use strict';
+
 (() => {
-    'use strict';
+    chrome.runtime.onConnect.addListener( port => {
+        if (port.name == 'iadpop') {
+            console.log(port.name + ' connect');
+            const key = 'settings';
+            let settings = {};
+            let pending = false;
+
+            loadSettings( key ).then( r => {
+                settings = r;
+
+                if (pending) {
+                    pending = false;
+                    port.postMessage({ settings });
+                }
+            });
+            let changed = false;
+
+            port.onDisconnect.addListener( p => {
+                const e = p.error || chrome.runtime.lastError;
+
+                if (e) {
+                    console.log(`disconnected by error: ${e.message}`);
+                }
+                else {
+                    console.log(p.name + ' disconnect');
+                }
+
+                if (changed) {
+                    saveData( key, settings );
+                    broadcast( settings );
+                }
+            });
+
+            port.onMessage.addListener( (message, sender, sendResponse) => {
+                console.log( `receive ${message.cmd}` );
+                console.log( message );
+
+                if (message.cmd == key) {
+                    if (settings.quality) {
+                        port.postMessage({ settings });
+                    }
+                    else {
+                        pending = true;
+                    }
+                }
+                else if (message.cmd == 'setting') {
+                    settings[message.name] = message.value;
+                    changed = true;
+                }
+            });
+        }
+    });
+
+    function broadcast(settings, tabid = null) {
+        console.log( 'broadcast settings' );
+        const detail = 'https://archive.org/details';
+        const detail2 = 'https://babel.hathitrust.org/cgi/pt';
+        const regex = new RegExp(`${detail}|${detail2}`)
+        const cmd =  'settings';
+        const query = {};
+
+        chrome.tabs.query(query, tabs => {
+            tabs.forEach( tab => {
+                if (tab.id != tabid && regex.test(tab.url)){
+                    chrome.tabs.sendMessage(tab.id, { cmd, settings });
+                }
+            })
+        });
+    }
+
+    async function loadSettings(key) {
+        const r = await loadData( key );
+        return  Object.keys(r).length == 0  ? defs : r;
+    }
+
+    const defs = {
+        quality: 1,
+        default_quality: 1,
+        tasks: 6,
+        default_tasks: 6,
+        format: false,
+        range: false,
+        embed: true,
+        progress: false,
+        retry: 3,
+        default_retry: 3,
+        retern: true,
+        notify: true,
+    };
 
     chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         const detail = 'https://archive.org/details';
@@ -41,10 +131,12 @@
     chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
         if (sender.id != chrome.runtime.id) return;
 
-        console.log('message received:');
+        console.log(`message received: ${message.cmd}`);
         console.log(message);
         var fileidtab = await loadFileidtab();
         const tabid = sender.tab.id;
+        const key = 'settings';
+        let settings;
 
         switch(message.cmd) {
             case 'new':
@@ -88,6 +180,20 @@
                     console.log(`downloadid removed: ${found}`);
                     console.log(downloadidtab);
                 }
+                break;
+            case 'settings':
+                const cmd = key;
+                settings = await loadSettings( key );
+                chrome.tabs.sendMessage(tabid, { cmd, settings });
+                break;
+            case 'setting':
+                settings = await loadSettings( key );
+                settings[message.name] = message.value;
+                saveData( key, settings );
+                broadcast( settings, tabid );
+                break;
+            case 'notify':
+                chrome.notifications.create(message.options);
                 break;
             default:
                 break;
@@ -215,6 +321,7 @@
     // for Brave
     setTimeout(async () => {
         const dnr = await loadDnr();
+
         if (dnr == 0) {
             chrome.runtime.reload();
         }
@@ -249,6 +356,19 @@
     async function loadDownloadidtab() {
         const r = await chrome.storage.session.get({'downloadidtab': {}});
         return new Map(Object.entries(r.downloadidtab));
+    }
+
+    function saveData(key, value) {
+        console.log( `save ${key}` );
+        console.log(value);
+        chrome.storage.session.set({ [key]: value });
+    }
+
+    async function loadData(key) {
+        console.log( `load ${key}` );
+        const r = await chrome.storage.session.get({ [key]: {} });
+        console.log( r[key] );
+        return r[key];
     }
 
 })();

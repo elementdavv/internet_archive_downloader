@@ -4,7 +4,7 @@
     , "description": "__MSG_description__"
     , "homepage_url": "https://github.com/elementdavv/internet_archive_downloader"
     , "name": "Internet Archive Downloader"
-    , "version": "1.0.3"
+    , "version": "1.1.0"
     , "default_locale": "en"
     , "update_url": "https://elementdavv.github.io/iad/updates.xml"
     , "icons": {
@@ -24,6 +24,7 @@
     , "permissions": [
         "declarativeNetRequest"
         , "downloads"
+        , "notifications"
         , "scripting"
         , "storage"
         , "tabs"
@@ -37,6 +38,7 @@
         "resources": [
             "css/*"
             , "js/*"
+            , "page/*"
         ]
         , "matches": [
             "https://archive.org/*"
