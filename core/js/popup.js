@@ -27,59 +27,32 @@
 
         chrome.tabs.query(query, async tabs => {
             if (tabs.length == 0) return;
-            var tab = tabs[0];
-            const detail = 'https://archive.org/details';
-            const detail2 = 'https://babel.hathitrust.org/cgi/pt';
-            const jsc = '/js/contents.js';
 
-            if (tab.url.indexOf(detail) > -1) {
-                const dnr = await loadDnr();
-
-                if (dnr == 1) {
-                    injectjs(tab.id, jsc);
-                }
-                else {
-                    console.log('Internet Archive Downloader unsupported.');
-                }
-            }
-            else if (tab.url.indexOf(detail2) > -1) {
-                injectjs(tab.id, jsc);
-            }
-            else {
-                console.log('invalid location');
-            }
-            window.close();
+            chrome.runtime.sendMessage({ cmd: 'showButtons', tab: tabs[0], });
         });
+        window.close();
     }
 
     function test() {
         console.log('test');
-        const query = { active: true, currentWindow: true };
+        const detail = 'https://archive.org/details/*';
+        const search = 'https://archive.org/search?query=*';
+        const query = { active: true, currentWindow: true, url: [detail, search] };
 
         chrome.tabs.query(query, tabs => {
             if (tabs.length == 0) return;
-            var tab = tabs[0];
-            const detail = 'https://archive.org/details';
-            const search = 'https://archive.org/search';
-            const jst = '/js/test.js';
 
-            if (tab.url.indexOf(detail) > -1 || tab.url.indexOf(search) > -1) {
-                injectjs(tab.id, jst);
-            }
-            window.close();
+            const jst = '/js/test.js';
+            injectjs(tabs[0].id, jst);
         });
+        window.close();
     }
 
-    function injectjs(tabId, js) {
+    function injectjs(tabid, js) {
         chrome.scripting.executeScript({
             files: [js]
-            , target: {tabId}
+            , target: {tabid}
         });
-    }
-
-    async function loadDnr() {
-        const r = await chrome.storage.session.get({ 'dnr': 0 });
-        return parseInt(r.dnr);
     }
 
     function onDefault(e) {

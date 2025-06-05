@@ -13,8 +13,8 @@ import ImageDecoder from './utils/image_decoder.js';
 export default class Archive1 extends Base {
     constructor() {
         super();
-        this.btnData = '/page/btnData.html';
-        this.stubUrl = '/js/stub.js?tabid=' + this.tabid;
+        this.btnData = '/page/btnData1.html';
+        this.stubUrl = '/js/stub1.js?tabid=' + this.tabid;
         this.PARAGRAPH = 'PARAGRAPH';
         this.LINE = 'LINE';
         this.WORD = 'WORD';
@@ -152,7 +152,7 @@ export default class Archive1 extends Base {
     returnBook() {
         if (!this.br.protected || !this.settings.retern) return;
 
-        console.log('return the book.');
+        console.log('return book.');
         const uri = 'https://archive.org/services/loans/loan';
         const formdata = new FormData();
         formdata.set('action', 'return_loan');

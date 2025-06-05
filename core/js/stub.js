@@ -7,72 +7,55 @@
 
 'use strict';
 
-(() => {
-    var step = 0;
-    const STEPLIMIT = 8;
-    const src = document.currentScript.src;
-    const tabid = src.substr(src.indexOf('=') + 1);
-
-    const getBr = () => {
-        const br = {};
-        br.reductionFactors = window.br.reductionFactors;
-        br.bookId = window.br.bookId;
-        br.bookTitle = window.br.bookTitle;
-        br.bookPath = window.br.bookPath;
-        br.server = window.br.server;
-        br.data = window.br.data.flat();
-        br.protected = window.br.protected;
-        br.swInNavigator = navigator.serviceWorker != null;
-        return JSON.stringify(br);
+export default class Stub {
+    constructor() {
+        this.step = 0;
+        this.steplimit= 8;
+        this.intervalid = null;
+        window.addEventListener( 'message', this.onmessage );
     }
 
-    const getBookStatus = () => {
-        let r = 2;
-
-        // for collection, mediatype not exist
-        const mediatype = document.querySelector("meta[property='mediatype']");
-
-        if (!mediatype || mediatype.content != "texts") {
-            console.log('media not book, quit');
-            r = 1;
-        }
-        else if (!window.br) {
-            console.log(`no book info, wait ${step}`);
-            r = 0;
-        }
-        else if (!window.br.protected) {
-            ;
-        }
-        else if (!window.br.options.lendingInfo.loanId) {
-            console.log('book not borrowed yet, quit');
-            r = 1;
-        }
-        else {
-            console.log('done');
-        }
-        return r;
-    }
-
-    const check = () => {
-        const st = getBookStatus();
+    check = () => {
+        const st = this.getBookStatus();
 
         if (st == 0) {
-            if (++step == STEPLIMIT) {
+            if (++this.step == this.steplimit) {
                 console.log('wait timeout, quit');
-                clearInterval(intervalid);
-                intervalid = null;
+                this.clear();
             }
         }
         else {
-            clearInterval(intervalid);
-            intervalid = null;
+            this.clear();
 
             if (st == 2) {
-                window.postMessage({ tabid, cmd: 'init', br: getBr() });
+                window.postMessage({
+                    tabid: this.tabid,
+                    cmd: 'init',
+                    br: this.getBr(),
+                });
             }
         }
     }
 
-    var intervalid = setInterval(check, 1000);
+    start = () => {
+        console.log('start stub');
+        this.intervalid = setInterval(this.check, 1000);
+    }
 
-})();
+    clear = () => {
+        clearInterval(this.intervalid);
+        this.intervalid = null;
+    }
+
+    onmessage = (e) => {
+        const data = e.data;
+        const that = Stub.instance;
+        if (data.tabid != that.tabid) return;
+
+        if (data.cmd == 'restart') {
+            that.start();
+        }
+    };
+
+    static instance;
+}

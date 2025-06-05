@@ -12,8 +12,8 @@ import Base from './base.js';
 export default class Hathitrust1 extends Base {
     constructor() {
         super();
-        this.btnData = '/page/btnData1.html';
-        this.stubUrl = '/js/stub1.js?tabid=' + this.tabid;
+        this.btnData = '/page/btnData2.html';
+        this.stubUrl = '/js/stub2.js?tabid=' + this.tabid;
         this.PARAGRAPH = '.ocr_par';
         this.LINE = '.ocr_line';
         this.WORD = '.ocrx_word';

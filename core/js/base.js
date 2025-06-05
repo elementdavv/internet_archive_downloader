@@ -71,10 +71,11 @@ export default class Base {
         this.writer = null;         // file stream writer
         this.doc = null;            // pdf/zip document object
 
-        window.onmessage = this.onmessage;
+        window.addEventListener( 'message', this.onmessage );
 
         chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             if (sender.id != chrome.runtime.id) return;
+            if (!window.internetarchivedownloaderinit) return;
 
             console.log(`message from browser: ${message.cmd}`);
 
@@ -137,9 +138,17 @@ export default class Base {
     }
 
     loadScript(href) {
+        const scripts = document.querySelectorAll('script');
+
+        for (let script of scripts) {
+            if (script.src.indexOf(href) > -1) {
+                window.postMessage({ tabid: this.tabid, cmd: 'restart' });
+                return;
+            }
+        }
         console.log(`load script: ${href}`);
         var script = document.createElement('script');
-        script.type = 'text/javascript';
+        script.type = 'module';
         script.src = toUrl(href);
         document.head.appendChild(script);
     }
@@ -325,7 +334,7 @@ export default class Base {
             this.tocontinue();
         }
         else {
-            console.log('\nmessage from user: download');
+            console.log('message from user: download');
             if (this.getSelPages()) {
                 await this.clean();
                 this.getDownloadInfo();
@@ -464,11 +473,12 @@ export default class Base {
             if (sw) {
                 console.log('notify browser: new');
                 await sendMessage({cmd: 'new', fileid: this.filename});
-                this.createDocSW();
+                this.createWriterSw();
             }
             else {
-                await this.createDoc();
+                await this.createWriter();
             }
+            this.createDoc();
         } catch(e) {
             // error from showSaveFilePicker
             const message = e.toString();
@@ -707,44 +717,19 @@ export default class Base {
         this.doc.image(view, text, options);
     }
 
-    async createDoc() {
-        if (this.ctrl) {
-            await this.createZIPDoc();
-        }
-        else {
-            await this.createPDFDoc();
-        }
-    }
-
-    createDocSW() {
-        const writable = streamSaver.createWriteStream(this.filename);
-        // writer.write(uInt8)
-        this.writer = writable.getWriter();
+    async createWriter() {
+        let options;
 
         if (this.ctrl) {
-            this.createZIPDocSW();
+            options = this.pickOptions( 'Zip archive', { 'application/zip': ['.zip'] });
         }
         else {
-            this.createPDFDocSW();
+            options = this.pickOptions( 'Portable Document Format (PDF)', { 'application/pdf': ['.pdf'] });
         }
-    }
-
-    async createZIPDoc() {
-        const options = this.pickOptions( 'Zip archive', { 'application/zip': ['.zip'] } );
         this.filehandle = await showSaveFilePicker(options);
         const writable = await this.filehandle.createWritable();
         // writer.write(ArrayBuffer/TypedArray/DataView/Blob/String/StringLiteral)
         this.writer = await writable.getWriter();
-        this.doc = new ZIPDocument(this.writer);
-    }
-
-    async createPDFDoc() {
-        const options = this.pickOptions( 'Portable Document Format (PDF)', { 'application/pdf': ['.pdf'] } );
-        this.filehandle = await showSaveFilePicker(options);
-        const writable = await this.filehandle.createWritable();
-        // writer.write(ArrayBuffer/TypedArray/DataView/Blob/String/StringLiteral)
-        this.writer = await writable.getWriter();
-        this.doc = new PDFDocument(this.writer, this.pdfOptions);
     }
 
     pickOptions( description, accept ) {
@@ -758,12 +743,19 @@ export default class Base {
         };
     }
 
-    createZIPDocSW() {
-        this.doc = new ZIPDocument(this.writer);
+    createWriterSw() {
+        const writable = streamSaver.createWriteStream(this.filename);
+        // writer.write(uInt8)
+        this.writer = writable.getWriter();
     }
 
-    createPDFDocSW() {
-        this.doc = new PDFDocument(this.writer, this.pdfOptions);
+    createDoc() {
+        if (this.ctrl) {
+            this.doc = new ZIPDocument(this.writer);
+        }
+        else {
+            this.doc = new PDFDocument(this.writer, this.pdfOptions);
+        }
     }
 
     getContent() {
@@ -797,6 +789,8 @@ export default class Base {
 
     notifyTray() {
         if (!this.settings.notify) return;
+
+        console.log('notify tray.');
 
         const options = {
             type: 'basic',
@@ -873,7 +867,7 @@ export default class Base {
     returnBook() { }
     refreshTip() { }
 }  // class
-  
+
 function fromId(id) {
     return document.getElementById(id);
 }

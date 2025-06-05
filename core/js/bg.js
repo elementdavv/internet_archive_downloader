@@ -63,15 +63,14 @@
 
     function broadcast(settings, tabid = null) {
         console.log( 'broadcast settings' );
-        const detail = 'https://archive.org/details';
-        const detail2 = 'https://babel.hathitrust.org/cgi/pt';
-        const regex = new RegExp(`${detail}|${detail2}`)
+        const detail = 'https://archive.org/details/*';
+        const detail2 = 'https://babel.hathitrust.org/cgi/pt?id=*';
         const cmd =  'settings';
-        const query = {};
+        const query = {url: [detail, detail2]};
 
         chrome.tabs.query(query, tabs => {
             tabs.forEach( tab => {
-                if (tab.id != tabid && regex.test(tab.url)){
+                if (tab.id != tabid){
                     chrome.tabs.sendMessage(tab.id, { cmd, settings });
                 }
             })
@@ -98,27 +97,41 @@
         notify: true,
     };
 
-    chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-        const detail = 'https://archive.org/details';
-        const detail2 = 'https://babel.hathitrust.org/cgi/pt';
-        const jsc = 'js/contents.js';
+    var t = 0;
 
+    chrome.tabs.onUpdated.addListener( (tabId, changeInfo, tab) => {
         if (changeInfo.status == 'complete') {
-            if (tab.url.indexOf(detail) > -1) {
-                const dnr = await loadDnr();
+            const t1 = performance.now();
 
-                if (dnr == 1) {
-                    injectjs(tabId, jsc);
-                }
-                else {
-                    console.log('Internet Archive Downloader unsupported.');
-                }
+            if (t1 - t > 1000) {
+                showButtons(tab);
             }
-            else if (tab.url.indexOf(detail2) > -1) {
-                injectjs(tabId, jsc);
+            else {
+                console.log('unexpected tab complete event');
             }
+            t = t1;
         }
     });
+
+    async function showButtons(tab) {
+        const detail = 'https://archive.org/details/';
+        const detail2 = 'https://babel.hathitrust.org/cgi/pt?id=';
+        const jsc = '/js/contents.js';
+
+        if (tab.url.indexOf(detail) > -1) {
+            const dnr = await loadDnr();
+
+            if (dnr == 1) {
+                injectjs(tab.id, jsc);
+            }
+            else {
+                console.log('Internet Archive Downloader unsupported.');
+            }
+        }
+        else if (tab.url.indexOf(detail2) > -1) {
+            injectjs(tab.id, jsc);
+        }
+    }
 
     function injectjs(tabId, js) {
         chrome.scripting.executeScript({
@@ -134,7 +147,7 @@
         console.log(`message received: ${message.cmd}`);
         console.log(message);
         var fileidtab = await loadFileidtab();
-        const tabid = sender.tab.id;
+        const tabid = sender.tab?.id;
         const key = 'settings';
         let settings;
 
@@ -194,6 +207,9 @@
                 break;
             case 'notify':
                 chrome.notifications.create(message.options);
+                break;
+            case 'showButtons':
+                showButtons(message.tab);
                 break;
             default:
                 break;
