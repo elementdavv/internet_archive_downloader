@@ -384,7 +384,7 @@ export default class Base {
     }
 
     async download() {
-        console.log(`download ${this.filename} at ${new Date().toJSON().slice(0,19)}`);
+        console.log(`download ${this.filename} at ${new Date().toJSON()}`);
         await this.getFile();
 
         if (this.doc) {

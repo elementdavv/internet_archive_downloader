@@ -11,11 +11,9 @@
     chrome.runtime.onConnect.addListener( port => {
         if (port.name == 'iadpop') {
             console.log(port.name + ' connect');
-            const key = 'settings';
-            let settings = {};
-            let pending = false;
+            let settings = {}, pending = false, changed = false;
 
-            loadSettings( key ).then( r => {
+            loadSettings().then( r => {
                 settings = r;
 
                 if (pending) {
@@ -23,7 +21,6 @@
                     port.postMessage({ settings });
                 }
             });
-            let changed = false;
 
             port.onDisconnect.addListener( p => {
                 const e = p.error || chrome.runtime.lastError;
@@ -36,7 +33,7 @@
                 }
 
                 if (changed) {
-                    saveData( key, settings );
+                    saveSettings( settings );
                     broadcast( settings );
                 }
             });
@@ -45,7 +42,7 @@
                 console.log( `receive ${message.cmd}` );
                 console.log( message );
 
-                if (message.cmd == key) {
+                if (message.cmd == 'settings') {
                     if (settings.quality) {
                         port.postMessage({ settings });
                     }
@@ -77,26 +74,6 @@
         });
     }
 
-    async function loadSettings(key) {
-        const r = await loadData( key );
-        return  Object.keys(r).length == 0  ? defs : r;
-    }
-
-    const defs = {
-        quality: 1,
-        default_quality: 1,
-        tasks: 6,
-        default_tasks: 6,
-        format: false,
-        range: false,
-        embed: true,
-        progress: false,
-        retry: 3,
-        default_retry: 3,
-        retern: true,
-        notify: true,
-    };
-
     var t = 0;
 
     chrome.tabs.onUpdated.addListener( (tabId, changeInfo, tab) => {
@@ -113,19 +90,17 @@
         }
     });
 
-    async function showButtons(tab) {
+    function showButtons(tab) {
         const detail = 'https://archive.org/details/';
         const detail2 = 'https://babel.hathitrust.org/cgi/pt?id=';
         const jsc = '/js/contents.js';
 
         if (tab.url.indexOf(detail) > -1) {
-            const dnr = await loadDnr();
-
             if (dnr == 1) {
                 injectjs(tab.id, jsc);
             }
             else {
-                console.log('Internet Archive Downloader unsupported.');
+                console.log('unsupport');
             }
         }
         else if (tab.url.indexOf(detail2) > -1) {
@@ -135,8 +110,8 @@
 
     function injectjs(tabId, js) {
         chrome.scripting.executeScript({
-            files: [js]
-            , target: {tabId}
+            files: [js],
+            target: {tabId},
         });
     }
 
@@ -146,20 +121,19 @@
 
         console.log(`message received: ${message.cmd}`);
         console.log(message);
-        var fileidtab = await loadFileidtab();
         const tabid = sender.tab?.id;
-        const key = 'settings';
-        let settings;
+        let settings, fileidtab;
 
         switch(message.cmd) {
             case 'new':
+                fileidtab = await loadFileidtab();
                 const fileid = message.fileid;
                 fileidtab.set(fileid, tabid);
                 saveFileidtab(fileidtab);
                 console.log(`fileid added: ${fileid}`);
-                console.log(fileidtab);
                 break;
             case 'abort':
+                fileidtab = await loadFileidtab();
                 var found = 0;
 
                 // if download hasn't begin
@@ -173,7 +147,6 @@
                     fileidtab.delete(found);
                     saveFileidtab(fileidtab);
                     console.log(`fileid removed: ${found}`);
-                    console.log(fileidtab);
                 }
                 // if user interrupt during download
                 found = 0;
@@ -191,18 +164,17 @@
                     downloadidtab.delete(found);
                     saveDownloadidtab(downloadidtab);
                     console.log(`downloadid removed: ${found}`);
-                    console.log(downloadidtab);
                 }
                 break;
             case 'settings':
-                const cmd = key;
-                settings = await loadSettings( key );
+                const cmd = 'settings' ;
+                settings = await loadSettings();
                 chrome.tabs.sendMessage(tabid, { cmd, settings });
                 break;
             case 'setting':
-                settings = await loadSettings( key );
+                settings = await loadSettings();
                 settings[message.name] = message.value;
-                saveData( key, settings );
+                saveSettings( settings );
                 broadcast( settings, tabid );
                 break;
             case 'notify':
@@ -219,6 +191,8 @@
 
     // when user confirm in save as dialog/automatic confirm
     chrome.downloads.onCreated.addListener(async downloadItem => {
+        if (downloadItem.startTime < startTime) return;
+
         var fileidtab = await loadFileidtab();
         if (fileidtab.size == 0) return;
 
@@ -235,7 +209,6 @@
                 downloadidtab.set(downloadid, tabid);
                 saveDownloadidtab(downloadidtab);
                 console.log(`downloadid added: ${downloadid}`);
-                console.log(downloadidtab);
 
                 chrome.tabs.sendMessage(tabid, {
                     cmd:'create'
@@ -247,18 +220,17 @@
             fileidtab.delete(found);
             saveFileidtab(fileidtab);
             console.log(`fileid removed: ${found}`);
-            console.log(fileidtab);
         }
     });
 
     // when download paused/resume/canceled/error/complete from browser
     chrome.downloads.onChanged.addListener(async downloadDelta => {
         var downloadidtab = await loadDownloadidtab();
-        if (!downloadidtab.has('' + downloadDelta.id)) return;
+        const downloadid = '' + downloadDelta.id;
+        if (!downloadidtab.has(downloadid)) return;
 
         console.log('download change:')
         console.log(downloadDelta);
-        const downloadid = '' + downloadDelta.id;
         const tabid = parseInt(downloadidtab.get(downloadid));
 
         if (downloadDelta.paused != undefined && downloadDelta.paused.current == true) {
@@ -275,7 +247,6 @@
             downloadidtab.delete(downloadid);
             saveDownloadidtab(downloadidtab);
             console.log(`downloadid removed: ${downloadid}`);
-            console.log(downloadidtab);
 
             if (downloadDelta.error.current == 'USER_CANCELED') {
                 chrome.tabs.sendMessage(tabid, {
@@ -290,7 +261,6 @@
             downloadidtab.delete(downloadid);
             saveDownloadidtab(downloadidtab);
             console.log(`downloadid removed: ${downloadid}`);
-            console.log(downloadidtab);
         }
     });
 
@@ -328,63 +298,117 @@
         };
     }
 
-    if (chrome.declarativeNetRequest) {
-        chrome.declarativeNetRequest.updateSessionRules(getOption())
-            .then(()=>saveDnr())
-            .catch(e=>console.error(e));
+    function updateDnr() {
+        if (chrome.declarativeNetRequest) {
+            chrome.declarativeNetRequest.updateDynamicRules(getOption())
+                .then(()=>saveDnr())
+                .catch(e=>console.error(e));
+        }
     }
 
-    // for Brave
-    setTimeout(async () => {
-        const dnr = await loadDnr();
-
-        if (dnr == 0) {
-            chrome.runtime.reload();
-        }
-    }, 2e3);
-
-    // storage
     // dnr
     function saveDnr() {
-        chrome.storage.session.set({ 'dnr': 1 });
+        saveData('dnr', 1);
     }
 
     async function loadDnr() {
-        const r = await chrome.storage.session.get({ 'dnr': 0 });
-        return parseInt(r.dnr);
+       return await loadData('dnr', 0)
     }
 
     // fileid to tabid map
     function saveFileidtab(fileidtab) {
-        chrome.storage.session.set({'fileidtab': Object.fromEntries(fileidtab)});
+        saveSessData('fileidtab', fileidtab);
     }
 
     async function loadFileidtab() {
-        const r = await chrome.storage.session.get({'fileidtab': {}});
-        return new Map(Object.entries(r.fileidtab));
+        return await loadSessData('fileidtab', new Map());
     }
 
     // downloadid to tabid map
     function saveDownloadidtab(downloadidtab) {
-        chrome.storage.session.set({'downloadidtab': Object.fromEntries(downloadidtab)});
+        saveSessData('downloadidtab', downloadidtab);
     }
 
     async function loadDownloadidtab() {
-        const r = await chrome.storage.session.get({'downloadidtab': {}});
-        return new Map(Object.entries(r.downloadidtab));
+        return await loadSessData('downloadidtab', new Map());
+    }
+
+    // settings
+    function saveSettings(settings) {
+        saveData( 'settings', settings );
+    }
+
+    async function loadSettings() {
+        return await loadData( 'settings', defs );
+    }
+
+    function saveSessData(key, value) {
+        console.log( `save ${key}` );
+        console.log( value );
+
+        if (value instanceof Map) {
+            value = Object.fromEntries(value);
+        }
+        chrome.storage.session.set({ [key]: value });
+    }
+
+    async function loadSessData(key, defvalue = {}) {
+        console.log( `load ${key}` );
+        let r = await chrome.storage.session.get({ [key]: defvalue });
+        r = r[key];
+
+        if (defvalue instanceof Map) {
+            r = new Map(Object.entries(r));
+        }
+        console.log( r );
+        return r;
     }
 
     function saveData(key, value) {
         console.log( `save ${key}` );
-        console.log(value);
-        chrome.storage.session.set({ [key]: value });
+        console.log( value );
+        chrome.storage.local.set({ [key]: value });
+
     }
 
-    async function loadData(key) {
+    async function loadData(key, defvalue = {}) {
         console.log( `load ${key}` );
-        const r = await chrome.storage.session.get({ [key]: {} });
-        console.log( r[key] );
-        return r[key];
+        let r = await chrome.storage.local.get({ [key]: defvalue });
+        r = r[key];
+        console.log( r );
+        return r;
     }
 
+    async function start() {
+        startTime = new Date().toJSON();
+        console.log(`start bg: ${startTime}`);
+        dnr = await loadDnr();
+
+        if (dnr == 0) {
+            updateDnr();
+
+            setTimeout( async () => {
+                dnr = await loadDnr();
+            }, 2e3);
+        }
+    }
+
+    const defs = {
+        quality: 1,
+        default_quality: 1,
+        tasks: 6,
+        default_tasks: 6,
+        format: false,
+        range: false,
+        embed: true,
+        progress: false,
+        retry: 3,
+        default_retry: 3,
+        retern: true,
+        notify: true,
+    };
+
+    var startTime;
+    var dnr;
+    start();
 })();
