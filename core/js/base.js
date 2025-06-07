@@ -426,7 +426,7 @@ export default class Base {
 
     // wait and test if service worker is available
     waitsw() {
-        this.swto = setTimeout(() => {
+        this.swto = setTimeout( () => {
             this.swto = null;
 
             if (streamSaver.swready) {
@@ -439,7 +439,7 @@ export default class Base {
                 console.log(message);
                 this.abortdoc({sync: sw, message});
             }
-        }, 3e3);
+        }, 3e3 );
     }
 
     // no longer waiting for service worker

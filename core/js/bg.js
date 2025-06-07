@@ -389,7 +389,7 @@
 
             setTimeout( async () => {
                 dnr = await loadDnr();
-            }, 2e3);
+            }, 2e3 );
         }
     }
 

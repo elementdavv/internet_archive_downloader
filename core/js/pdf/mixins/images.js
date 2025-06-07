@@ -63,10 +63,9 @@ export default {
     let that = this.that;
     const xmldoc = new DOMParser().parseFromString(text, 'text/xml');
     const { maxwidth, maxheight } = that.getMaxDim(xmldoc);
+    if ( !maxwidth || !maxheight ) return this;
+    if ( !this.validDoc(xmldoc) ) return this;
 
-    if ( maxwidth == 0 ) {
-        return this;
-    }
     const xratio = w / maxwidth;
     const yratio = h / maxheight;
     this.opacity(0.0);
@@ -102,6 +101,18 @@ export default {
     });
     return this;
   },
+
+    validDoc(xmldoc) {
+        let that = this.that;
+        let tags = xmldoc.querySelectorAll(that.WORD);
+        if (tags.length == 0) return false;
+
+        for (let tag of tags) {
+            if (!that.REG_COORDS.test(tag.attributes[that.COORDS]?.value))
+                return false;
+        }
+        return true;
+    },
 
     getOverLaps(fs, line, bs, left, right, xratio) {
         let loopcount = 0, percent = 1;

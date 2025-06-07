@@ -15,10 +15,12 @@ export default class Archive1 extends Base {
         super();
         this.btnData = '/page/btnData1.html';
         this.stubUrl = '/js/stub1.js?tabid=' + this.tabid;
+        this.PAGE = 'OBJECT';
         this.PARAGRAPH = 'PARAGRAPH';
         this.LINE = 'LINE';
         this.WORD = 'WORD';
         this.COORDS = 'coords';
+        this.REG_COORDS = /^[0-9]+,[0-9]+,[0-9]+,[0-9]+$/;
         this.DELIMITER = ',';
         this.data = [];              // page image urls
     }
@@ -139,12 +141,12 @@ export default class Archive1 extends Base {
     }
 
     getMaxDim(xmldoc) {
-        let maxwidth = 0, maxheight = 0;
-        let tag = xmldoc.getElementsByTagName('OBJECT');
+        let maxwidth = null, maxheight = null;
+        let tag = xmldoc.querySelector(this.PAGE);
 
-        if (tag != null && tag.length > 0) {
-            maxwidth = parseFloat(tag[0].attributes['width'].value);
-            maxheight = parseFloat(tag[0].attributes['height'].value);
+        if (tag?.hasAttribute('width') && tag.hasAttribute('height')) {
+            maxwidth = parseFloat(tag.attributes['width'].value);
+            maxheight = parseFloat(tag.attributes['height'].value);
         }
         return { maxwidth, maxheight };
     }
@@ -164,7 +166,7 @@ export default class Archive1 extends Base {
             body: formdata,
         }).then(response => {
             if (response.ok) {
-                console.log('reload page.');
+                console.log('reload web page.');
                 location.reload();
             }
             else {
@@ -182,7 +184,7 @@ export default class Archive1 extends Base {
     }
 
     refreshTip() {
-        setTimeout(() => {
+        setTimeout( () => {
             try {
                 var top = 0;
                 var left = 0;
@@ -218,7 +220,7 @@ export default class Archive1 extends Base {
                 download_btn.style.setProperty('--afterleft', `${left}px`);
             }
             catch(e){}
-        }, 500);
+        }, 500 );
     }
 }
 

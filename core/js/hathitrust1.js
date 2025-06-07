@@ -14,10 +14,12 @@ export default class Hathitrust1 extends Base {
         super();
         this.btnData = '/page/btnData2.html';
         this.stubUrl = '/js/stub2.js?tabid=' + this.tabid;
+        this.PAGE = '.ocr_page';
         this.PARAGRAPH = '.ocr_par';
         this.LINE = '.ocr_line';
         this.WORD = '.ocrx_word';
         this.COORDS = 'data-coords';
+        this.REG_COORDS = /^[0-9]+\s[0-9]+\s[0-9]+\s[0-9]+$/;
         this.DELIMITER = ' ';
         this.url = '';               // page image urls
         this.toohot = null;          // wait for server cooling
@@ -132,14 +134,14 @@ export default class Hathitrust1 extends Base {
     waithot() {
         var waitlen = 61;
 
-        this.toohot = setInterval(function() {
+        this.toohot = setInterval( () => {
             if (--waitlen <= 0) {
                 this.tocontinue();
             }
             else {
                 this.waitprogressnotify(waitlen);
             }
-        }, 1000);
+        }, 1000 );
     }
 
     async clean() {
@@ -180,11 +182,11 @@ export default class Hathitrust1 extends Base {
     }
 
     getMaxDim(xmldoc) {
-        let maxwidth = 0, maxheight = 0;
-        let tag = xmldoc.getElementsByTagName('div');
+        let maxwidth = null, maxheight = null;
+        let tag = xmldoc.querySelector(this.PAGE);
 
-        if (tag != null && tag.length > 0) {
-            let coords = tag[0].attributes[this.COORDS].value.split(this.DELIMITER);
+        if (this.REG_COORDS.test(tag?.attributes[this.COORDS]?.value)) {
+            let coords = tag.attributes[this.COORDS].value.split(this.DELIMITER);
             maxwidth = parseFloat(coords[2]);
             maxheight = parseFloat(coords[3]);
         }

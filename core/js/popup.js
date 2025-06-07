@@ -175,7 +175,7 @@
         setInterval( () => {
             try { port.postMessage({}) }
             catch (e) {}
-        }, 25e3);
+        }, 25e3 );
 
         port.postMessage({ cmd: 'settings' });
     }

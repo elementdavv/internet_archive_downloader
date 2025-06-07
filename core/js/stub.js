@@ -39,7 +39,7 @@ export default class Stub {
 
     start = () => {
         console.log('start stub');
-        this.intervalid = setInterval(this.check, 1000);
+        this.intervalid = setInterval( this.check, 1000 );
     }
 
     clear = () => {
