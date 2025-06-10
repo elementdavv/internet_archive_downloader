@@ -19,7 +19,7 @@ export default class Hathitrust1 extends Base {
         this.LINE = '.ocr_line';
         this.WORD = '.ocrx_word';
         this.COORDS = 'data-coords';
-        this.REG_COORDS = /^[0-9]+\s[0-9]+\s[0-9]+\s[0-9]+$/;
+        this.REG_COORDS = /^[0-9]+(\s[0-9]+){3,}$/;
         this.DELIMITER = ' ';
         this.url = '';               // page image urls
         this.toohot = null;          // wait for server cooling

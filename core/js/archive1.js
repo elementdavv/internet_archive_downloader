@@ -20,7 +20,7 @@ export default class Archive1 extends Base {
         this.LINE = 'LINE';
         this.WORD = 'WORD';
         this.COORDS = 'coords';
-        this.REG_COORDS = /^[0-9]+,[0-9]+,[0-9]+,[0-9]+$/;
+        this.REG_COORDS = /^[0-9]+(,[0-9]+){3,}$/;
         this.DELIMITER = ',';
         this.data = [];              // page image urls
     }
