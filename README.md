@@ -8,12 +8,11 @@ In [HathiTrust Digital Library](https://hathitrust.org). books with full view pe
 
 The extension works by fetching every leaf of a book, constructing a PDF stream on the fly targeting to disk storage. So it can handle books of thousands of leafs easily with little memory.
 
-## What It Can Do
+## Features
 * Download a book as a PDF file with text embedded
 * Download a book as a collection of image files (JPEG/PNG) one for each leaf, and the text of the book
-* Optional leaf range
-* Optional leaf quality
 * Download multiple books in parallel
+* multiple options configurable
 
 ## Install manually
 Install as the following directions supports automatic updates when new versions are available.
@@ -38,7 +37,9 @@ Install as the following directions supports automatic updates when new versions
 - [Mozilla Addons (Firefox)](https://addons.mozilla.org/en-US/firefox/addon/internet_archive_downloader/)
 
 ## Configuration
-For Firefox, permissions of access to relative websites must be granted in the "Permissions" tab of the extension detail page.
+- For Firefox, permissions of access to related websites must be granted in the "Permissions" tab within the extension detail page.
+
+- Click the extension button on browser toolbar to open settings page. Configurable options include quality level, getting PDF or ZIP, preseting download range, whether to return book upon download completes etc. Hover mouse on information icon to the right of each item name to see its explanation. All changes will be applied to next download job. Old style Ctrl/Alt + Click combinations still work as ever.
 
 ## Usage
 ### Internet Archive:
@@ -51,7 +52,7 @@ The extension works with category 1 and 2.
 
 After borrowing a book, two new buttons, "Quality" and "Download", appear under the book viewer alongside the "Favorite" button. 
 
-On rare occasions where the buttons did not appear upon page loaded, click the extension button on browser toolbar, then choose "Show Buttons".
+On rare occasions where the buttons did not appear upon page loaded, click the extension button on browser toolbar to open settings page and click "Show Buttons".
 
 <image src="resources/capture/borrow1.png">
 
@@ -60,8 +61,6 @@ On rare occasions where the buttons did not appear upon page loaded, click the e
 * To get only a range of leafs, press the "Download" button while holding Alt key (Option key on Mac), then input a range.
 
 <image src="resources/capture/download1.png">
-
-On successful downloads, the book will be returned automatically for availability to other users.
 
 ### HathiTrust:
 No login, no borrows required. In [hathitrust.org](https://hathitrust.org), for books with full view permission, a new section, "Ayesha", appears above the "Download" section on the left-hand side of the page. The section contains three buttons, "Quality", "Tasks" and "Download".
@@ -74,7 +73,7 @@ No login, no borrows required. In [hathitrust.org](https://hathitrust.org), for 
 
 <image src="resources/capture/download2.png">
 
-The download process may take some breaks due to server restriction.
+The download job may take a break at each around 100 pages due to server restriction, just wait and continue.
 
 ## Introduction in Youtube
 [![Internet Archive Downloader](https://img.youtube.com/vi/SL4hbCKxl58/0.jpg)](https://www.youtube.com/watch?v=SL4hbCKxl58)
@@ -93,7 +92,7 @@ The project is for study purpose only. Users should recognize that downloading b
 - [PDFKit](https://github.com/foliojs/pdfkit) for PDF generation
 - [StreamSaver.js](https://github.com/jimmywarting/streamsaver.js) for filesystem stream creation and ZIP generation
 - [web-streams-polyfill](https://github.com/MattiasBuelens/web-streams-polyfill) for web stream writing
-- [CryptoES](https://github.com/entronad/crypto-es) for file ID generation
+- [CryptoES](https://github.com/entronad/crypto-es) for PDF ID generation
 - [png.js](https://github.com/foliojs/png.js) for PNG image parsing
 - [pako](https://github.com/nodeca/pako) for some string utilities
  

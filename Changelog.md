@@ -1,4 +1,8 @@
 # Changelog
+## v1.1.0
+- add settings page
+- improve embeded text appearance
+- improve fault tolerance
 
 ## v1.0.3
 - patch for image encryption
