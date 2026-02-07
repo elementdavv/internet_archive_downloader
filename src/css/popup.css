@@ -1,0 +1,226 @@
+body {
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size: 13px;
+    background-color: #1b1b1f;
+    width: 232px;
+    margin: 1px 0;
+    padding: 10px;
+    border: 1px solid white;
+}
+
+.iad-nav {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.iad-nav-item {
+    padding: 0;
+    margin: 0;
+    display: block;
+    line-height: 1.5em;
+    color: #c7c7cc;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: default;
+}
+.iad-pad {
+    height: 5px;
+}
+.iad-divider {
+    height: 1px;
+    overflow: hidden;
+    background-color: #444448;
+    margin: 6px 0;
+}
+
+.title {
+    line-height: 2em;
+    font-size: 16px;
+    text-align: center;
+}
+.servers, .helps {
+    width: 100%;
+}
+.settings {
+    width: 100%;
+    padding: 10px 0;
+}
+.servers td {
+    width: 50%;
+    padding-right: 6px;
+}
+.helps td {
+    padding-right: 6px;
+}
+.settings td {
+    padding: 4px;
+}
+.button {
+    width: 100%;
+    border: 1px solid #3cb371;
+    margin: 0 2px;
+    display: inline-block;
+    text-align: center;
+    cursor: pointer;
+}
+.button60 {
+    width: 60%;
+    border: 1px solid #3cb371;
+    margin: 0 2px;
+    display: inline-block;
+    text-align: center;
+    cursor: pointer;
+}
+.button:hover, .button60:hover {
+    background-color: #1c4532;
+}
+.label {
+    padding-right: 4px;
+}
+.info:hover:after {
+  content: attr(data-title);
+  position: absolute;
+  left: auto;
+  top: auto;
+  white-space: pre-wrap;
+  display: block;
+  box-sizing: border-box;
+  border: 1px solid gray;
+  padding: 3px;
+  background: #ace;
+  font: 10px verdana;
+  color: black;
+  z-index: 1;
+}
+
+/* switch true/false */
+.switch {
+  font-size: 17px;
+  position: relative;
+  display: inline-block;
+  width: 2.5em;
+  height: 1em;
+  top: 2px;
+  margin-right: 16px;
+}
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  border: 2px solid #414141;
+  border-radius: 50px;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 0.8em;
+  width: 1.2em;
+  left: 0;
+  bottom: 0;
+  background-color: #c7c7cc;
+  border-radius: inherit;
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.switch input:checked + .slider {
+/*  box-shadow: 0 0 20px rgba(9, 241, 79, 0.8);*/
+  border: 2px solid #3cb371;
+}
+.switch input:checked + .slider:before {
+  background-color: #3cbc71;
+  transform: translateX(1.5em);
+  left: -0.4em;
+}
+
+/* switch two values */
+.switch1 {
+  font-size: 17px;
+  position: relative;
+  display: inline-block;
+  width: 84px;
+  line-height: 1.1em;
+  top: 1px;
+}
+.switch1 input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider1 {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  border: 1px solid #3cb371;
+  border-radius: 50px;
+  font-size: 13px;
+  text-align: center;
+}
+.switch1 .slider1:after {
+  content: attr(data-first);
+}
+.switch1 input:checked + .slider1:after {
+  content: attr(data-second);
+}
+
+/* range slider */
+.range-input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  cursor: pointer;
+  outline: none;
+  border-radius: 15px;
+  height: 2px;
+  background: #c7c7cc;
+  display: block;
+  margin: 0;
+}
+.range-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 12px;
+  width: 12px;
+  background-color: #3cb371;
+  border-radius: 50%;
+  border: none;
+  transition: .2s ease-in-out;
+
+}
+.range-input::-moz-range-thumb {
+  height: 10px;
+  width: 10px;
+  background-color: #3cb371;
+  border-radius: 50%;
+  border: none;
+  transition: .2s ease-in-out;
+}
+.range-input::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 8px rgba(255,85,0, .1)
+}
+.range-input:active::-webkit-slider-thumb {
+  box-shadow: 0 0 0 10px rgba(255,85,0, .2)
+}
+.range-input:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 10px rgba(255,85,0, .2)
+}
+
+.range-input::-moz-range-thumb:hover {
+  box-shadow: 0 0 0 10px rgba(255,85,0, .1)
+}
+.range-input:active::-moz-range-thumb {
+  box-shadow: 0 0 0 13px rgba(255,85,0, .2)
+}
+.range-input:focus::-moz-range-thumb {
+  box-shadow: 0 0 0 13px rgba(255,85,0, .2)
+}
+.value {
+  cursor: text;
+  text-decoration: underline;
+  font-weight: bold;
+  padding-left: 8px;
+}

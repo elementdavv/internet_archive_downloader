@@ -1,0 +1,84 @@
+.action-buttons-section .download-btn .button:hover,
+.action-buttons-section .download-btn .button:focus {
+    color: #3cb371 !important;
+    border: 2px solid #3cb371;
+    background-color: #d9e8f4;
+}
+.action-buttons-section .scale-btn:hover,
+.action-buttons-section .scale-btn:focus {
+    color: #bc8f8f !important;
+    border: 2px solid #bc8f8f;
+    background-color: #d9e8f4;
+}
+.iadprogress {
+    background-color: #3cb371;
+}
+.iadselect {
+    -webkit-appearance: none;
+    text-align: center;
+    background-color: transparent;
+    border-width: 0;
+    outline: none;
+    cursor: pointer;
+}
+.iadlabel {
+    cursor: default;
+}
+
+.action-buttons-section .download-btn .button:before,
+.action-buttons-section .download-btn .button:after,
+.action-buttons-section .scale-btn:before,
+.action-buttons-section .scale-btn:after {
+    display: block;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    transition: opacity 300ms ease-out;
+    /* transform: translate3d(0,-10px,0); */
+    /* transition: all .15s ease-in-out; */
+}
+.action-buttons-section .download-btn .button:before,
+.action-buttons-section .scale-btn:before{
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 5px solid rgba(128, 128, 128, 1.0);
+    content: '';
+    height: 0;
+    width: 0;
+    z-index: 9998;
+}
+.action-buttons-section .download-btn .button:before{
+    top: var(--beforetop, 56px);
+    left: var(--beforeleft, 150.5px);
+}
+.action-buttons-section .scale-btn:before{
+    top: var(--beforetop, 56px);
+    left: var(--beforeleft, 73px);
+}
+.action-buttons-section .download-btn .button:after,
+.action-buttons-section .scale-btn:after{
+    background: rgba(0, 0, 0, 0.9);
+    border-radius: 4px;
+    color: #eee;
+    font-size: 11px;
+    padding: 3px 7px;
+    white-space: nowrap;
+    z-index: 9999;
+}
+.action-buttons-section .download-btn .button:after{
+    content: "__MSG_titledownload__";
+    top: var(--aftertop, 61px);
+    left: var(--afterleft, 102px);
+}
+.action-buttons-section .scale-btn:after{
+    content: "__MSG_titlescale__";
+    top: var(--aftertop, 61px);
+    left: var(--afterleft, 20px);
+}
+.action-buttons-section .download-btn .button:hover:before,
+.action-buttons-section .download-btn .button:hover:after,
+.action-buttons-section .scale-btn:hover:before,
+.action-buttons-section .scale-btn:hover:after {
+    opacity: 1;
+    transform: translate3d(0,0,0);
+}

@@ -1,1 +1,185 @@
-../../core/page/popup.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Internet Archive Downloader Popup</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <link rel="stylesheet" href="../css/popup.css">
+</head>
+<body>
+  <ul class="iad-nav">
+<!-- title -->
+    <li class="iad-nav-item">
+      <div class='title'>Internet Archive Downloader</div>
+    </li>
+
+<!-- servers -->
+    <li class="iad-nav-item">
+      <table class='servers'>
+        <tr>
+          <td>
+            <span href="https://archive.org/" id="id-archive" role="button" class="button">Archive</span>
+          </td>
+          <td>
+            <span href="https://hathitrust.org/" id="id-hathitrust" role="button" class="button">Hathitrust</span>
+	      </td>
+        </tr>
+      </table>
+    </li>
+
+<!-- settings -->
+    <li class="iad-nav-item">
+      <table class='settings'>
+<!-- quality -->
+        <tr>
+          <td style='width:54%'>
+            <span>Quality Level</span>
+          </td>
+          <td>
+            <span href="#" id="id-quality-default" role="button" class="button60" name='quality'>Default</span>
+            <label class='value' id='id-quality-value'>1</label>
+          </td>
+        </tr>
+        <tr>
+          <td colspan=2>
+            <input type="range" min="1" max="4" step="1" value="1" id="id-quality-slider" class="range-input" name='quality' />
+          </td>
+        </tr>
+<!-- tasks -->
+        <tr>
+          <td>
+            <span class='label'>Task Number</span>
+            <span data-title='Task number that will work in parallel in fetching every page of a book.' class='info'>&#9432;</span>
+          </td>
+          <td>
+            <span href="#" id="id-tasks-default" role="button" class="button60" name='tasks'>Default</span>
+            <label class='value' id='id-tasks-value'>6</label>
+          </td>
+        </tr>
+        <tr>
+          <td colspan=2>
+            <input type="range" min="1" max="5" step="2" value="5" id="id-tasks-slider" class="range-input" name='tasks' />
+          </td>
+        </tr>
+<!-- format -->
+        <tr>
+          <td>
+            <span>Getting Format</span>
+          </td>
+          <td>
+            <label class="switch1">
+              <input type="checkbox" id='id-format' name='format' />
+              <label for='id-format' class="slider1" data-first='PDF' data-second='ZIP'></label>
+            </label>
+          </td>
+        </tr>
+<!-- range -->
+        <tr>
+          <td>
+            <span class='label'>Page Range</span>
+            <span data-title='Get a book in one whole file, or split it into multiple ones, and if so, choose max page range in each one.' class='info' class='info'>&#9432;</span>
+          </td>
+          <td>
+            <label class="switch">
+              <input type="checkbox" id='id-range' name='range' />
+              <span class="slider"></span>
+            </label>
+            <label class='value' id='id-range-value'>100</label>
+          </td>
+        </tr>
+        <tr id='id-range-tr'>
+          <td colspan=2>
+            <input type="range" min="10" max="500" step="10" value="100" id="id-range-slider" class="range-input" name='range' />
+          </td>
+        </tr>
+<!-- embed -->
+        <tr>
+          <td>
+            <span class='label'>Embed Text</span>
+	        <span data-title='Embed book text into generated PDF/ZIP file. Now the languages of text inserted into PDF only support that PDF specification supports by default. Other languages such as CJK / Russion etc will become garbage characters.' class='info'>&#9432;</span>
+          </td>
+          <td>
+            <label class="switch">
+              <input type="checkbox" id='id-embed' name='embed' />
+              <span class="slider"></span>
+            </label>
+          </td>
+        </tr>
+<!-- progress-->
+        <tr>
+          <td>
+            <span class='label'>Show Progress</span>
+          </td>
+          <td>
+            <label class="switch1">
+              <input type="checkbox" id='id-progress' name='progress' />
+              <label for='id-progress' class="slider1" data-first='Icon' data-second='Percent'></label>
+            </label>
+          </td>
+        </tr>
+<!-- retry -->
+        <tr>
+          <td>
+            <span class='label'>Retry Times</span>
+	    <span data-title='If error occured during fetching a page, the retry times before aborting the job. &#10;CAUTION: if you would set a higher value, make sure your browser had at least downloaded one book successfully.' class='info'>&#9432;</span>
+          </td>
+          <td>
+            <span href="#" id="id-retry-default" role="button" class="button60" name='retry'>Default</span>
+            <label class='value' id='id-retry-value'>3</label>
+          </td>
+        </tr>
+        <tr>
+          <td colspan=2>
+            <input type="range" min="1" max="10" step="1" value="3" id="id-retry-slider" class="range-input" name='retry' />
+          </td>
+        </tr>
+<!-- return -->
+        <tr>
+          <td>
+            <span class='label'>Return Book</span>
+            <span data-title='Return the book automatically when a book download succeeds.' class='info'>&#9432;<span>
+          </td>
+          <td>
+            <label class="switch">
+              <input type="checkbox" id='id-retern' name='retern' />
+              <span class="slider"></span>
+            </label>
+          </td>
+        </tr>
+<!-- notification -->
+        <tr>
+          <td>
+            <span class='label'>Notification</span>
+            <span data-title='Emit system notification whenever a download job completes. The message will show up in system tray area.' class='info'>&#9432;<span>
+          </td>
+          <td>
+            <label class="switch">
+              <input type="checkbox" id='id-notify' name='notify' />
+              <span class="slider"></span>
+            </label>
+          </td>
+        </tr>
+      </table>
+    </li>
+
+<!-- bottom -->
+    <li class="iad-nav-item">
+      <table class='helps'>
+        <tr>
+          <td style='width:50%'>
+            <span href="#" id="id-showbuttons" role="button" class="button">Show Buttons</span>
+          </td>
+          <td style='width:25%'>
+            <span href="#" id="id-test" role="button" class="button">Test</span>
+	      </td>
+          <td style='width:25%'>
+            <span href="https://github.com/elementdavv/internet_archive_downloader" id="id-help" role="button" class="button">Help</span>
+	      </td>
+        </tr>
+      </table>
+    </li>
+  </ul>
+  <div class='iad-pad' />
+  <script src="../js/popup.js"></script>
+</body>
+</html>

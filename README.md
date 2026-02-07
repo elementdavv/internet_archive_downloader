@@ -86,8 +86,17 @@ The download job may take a break at each around 100 pages due to server restric
 ## Privacy
 Please read carefully the [Extension Privacy Policy](Privacy.md).
 
-## Disclaimer
-The project is for study purpose only. Users should recognize that downloading borrowed limited period books is prohibited. All books downloaded using this project should be deleted within 48 hours. The project is provided on an "as is" basis. Use of the project is at user's own risk. The owner does not guarantee or assume responsibility for any damages to user's computer system, mobile device, loss of data or legal risks that results from using the project.
+## Maintenance Note (Fork)
+This version is a **fork** of the original project, maintained to fix issues with modern Archive.org (2024+) architecture, Shadow DOM encapsulation, and performance bottlenecks. All original copyright notices are preserved as per [AGPLv3](LICENSE).
+
+## Disclaimer & Legal Notice
+**IMPORTANT: Read carefully before use.**
+
+This project is provided for **educational and research purposes only**. 
+1. **As-Is Basis**: In accordance with **AGPLv3 Section 15**, this program is distributed in the hope that it will be useful, but **WITHOUT ANY WARRANTY**; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+2. **Limitation of Liability**: As per **AGPLv3 Section 16**, the authors or copyright holders shall NOT be liable for any claim, damages, or other liability, whether in an action of contract, tort, or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software. This includes, but is not limited to, data loss, account suspension, or legal consequences resulting from the use of this tool on third-party platforms.
+3. **Usage Restrictions**: Use of this tool must comply with the Terms of Service of Archive.org and HathiTrust. Downloading borrowed books may be subject to platform-specific restrictions. Users assume all responsibility for compliance with local and international laws.
+4. **No Redistribution**: Users are strictly prohibited from redistributing copyrighted material downloaded using this tool.
 
 ## Credits
 - [PDFKit](https://github.com/foliojs/pdfkit) for PDF generation
@@ -97,6 +106,18 @@ The project is for study purpose only. Users should recognize that downloading b
 - [png.js](https://github.com/foliojs/png.js) for PNG image parsing
 - [pako](https://github.com/nodeca/pako) for some string utilities
  
+## Sharing & Redistribution
+This project is open-source under the AGPLv3 license. You are free to share, fork, and redistribute this software, provided that:
+1. The **AGPLv3 license** is preserved.
+2. The **source code remains accessible** to anyone you share the extension with (this GitHub fork fulfills this requirement).
+3. All **original copyright notices** and modification logs are kept intact.
+
+## Contributions (Pull Requests)
+If you wish to contribute to the original project:
+- You can submit a **Pull Request (PR)** to the [upstream repository](https://github.com/elementdavv/internet_archive_downloader).
+- Once a PR is merged, you officially become a **Contributor**.
+- By submitting a PR, you agree that your contributions are licensed under the same AGPLv3 terms as the original project.
+
 ## Contacts
 - Email: elementdavv@hotmail.com
 - Telegram: [@elementdavv](https://t.me/elementdavv)

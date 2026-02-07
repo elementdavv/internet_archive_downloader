@@ -5,7 +5,9 @@ _Effective Date: November 13, 2024_
 I respect and value your privacy. This Privacy Policy describes how I handle and protect your personal information in relation to your use of my Browser Extension(s).
 
 ## Information Collection
-My Browser Extensions do not collect any personal information from users. I do not gather, store, or transmit any data that can be used to personally identify you, such as your name, email address, or location. Since no data is collected, none of your data is sold to third parties.
+My Browser Extensions do not collect any personal information from users. I do not gather, store, or transmit any data that can be used to personally identify you over a network. 
+
+**Note on Session Usage**: To facilitate downloads from Archive.org and HathiTrust, the extension uses your active browser session (cookies). These cookies are only used locally for authentication with the respective platforms during the download process and are never transmitted to any other party or server controlled by me. Since no data is collected, none of your data is sold to third parties.
 
 ## Links to Other Websites
 My Browser Extensions may contain links to other websites not operated by me. This Privacy Policy does not cover how that website processes personal information. I encourage you to review the Privacy Policy of every website that you visit.

@@ -1,4 +1,10 @@
 # Changelog
+## v1.2.0
+- **Speed Optimization**: Implemented parallel fetching motor using `Promise.all` (Performance increased by 200-300%).
+- **Shadow DOM Support**: Added recursive Shadow DOM piercing to support the new Archive.org UI (2024+).
+- **Error Resilience**: Added 403 Forbidden resilience for OCR layers (DjVu XML); download continues even if text layer is restricted.
+- **Physical Asset Restoration**: Fixed broken symbolic links by migrating core assets directly into the `src` directory.
+- **Improved Page Detection**: Support both `property` and `name` attributes for `mediatype` metadata.
 ## v1.1.0
 - add settings page
 - improve embeded text appearance

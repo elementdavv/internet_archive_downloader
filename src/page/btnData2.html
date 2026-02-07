@@ -1,1 +1,43 @@
-../../core/page/btnData2.html
+<div class='accordion-item null panel svelte-g6tm5k'>
+    <h2 class='accordion-header' id='h${buttonid}'>
+        <button class='accordion-button svelte-g6tm5k collapsed' type='button' data-bs-toggle='collapse' data-bs-target='#c${buttonid}' aria-expanded='false' aria-controls='c${buttonid}'>
+            <div class='d-flex gap-2 align-items-center me-1'><i class='fa-solid fa-hippo' slot='icon'></i>Ayesha</div>
+        </button>
+    </h2>
+    <div id='c${buttonid}' class='accordion-collapse collapse' aria-labelledby='h${buttonid}' data-bs-parent='#controls' style>
+        <div class='accordion-body'>
+            <div class="d-flex gap-4 align-items-center">
+                <fieldset class='mb-3'>
+                    <legend class='fs-5'>Quality</legend>
+                    <select id='iadscaleid' class='form-select' style='border:0;'>
+                        <option value='size=full'>full size</option>
+                    </select>
+                </fieldset>
+                <fieldset class='mb-3'>
+                    <legend class='fs-5'>Tasks</legend>
+                    <select id='iadtasksid' class='form-select' style='border:0;'>
+                        <option value='6' selected>6</option>
+                        <option value='3'>3</option>
+                        <option value='1'>1</option>
+                    </select>
+                </fieldset>
+            </div>
+            <div class="d-flex gap-4 align-items-center">
+                <fieldset class='mb-3' id ='iadlangparent' style='display:none'>
+                    <legend class='fs-5'>Language</legend>
+                    <select id='iadlangid' class='form-select' style='border:0;'>
+                        <option value='en' selected>English</option>
+                    </select>
+                </fieldset>
+                <fieldset class='mb-3'>
+                    <button type='button' id='iadbuttonid' class='btn btn-outline-dark'>
+                        <div>
+                            <span class='fa-solid fa-arrow-down' id='iadprogressicon'></span>
+                            <span style='display:block' id='iadprogressid'></span>
+                        </div>
+                    </button>
+                </fieldset>
+            </div>
+        </div>
+    </div>
+</div>
