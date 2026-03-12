@@ -1,4 +1,7 @@
 # Changelog
+## v1.2.0
+- add support of multiple languages including CJK, Russian, Hindi, Arabic, Hebrew etc to text embedded into PDF.
+
 ## v1.1.0
 - add settings page
 - improve embeded text appearance

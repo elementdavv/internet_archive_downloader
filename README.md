@@ -9,7 +9,7 @@ In [HathiTrust Digital Library](https://hathitrust.org). books with full view pe
 The extension works by fetching every leaf of a book, constructing a PDF stream on the fly targeting to disk storage. So it can handle books of thousands of leafs easily with little memory.
 
 ## Features
-* Download a book as a PDF file with text embedded
+* Download a book as a PDF file with text embedded, multiple languages supported
 * Download a book as a collection of image files (JPEG/PNG) one for each leaf, and the text of the book
 * Download multiple books in parallel
 * multiple options configurable
