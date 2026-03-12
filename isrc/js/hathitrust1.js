@@ -1,0 +1,1 @@
+../../core/js/hathitrust1.js

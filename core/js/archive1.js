@@ -91,6 +91,7 @@ export default class Archive1 extends Base {
         info.Title = this.br.bookTitle;
         const meta = new Map();
         meta.set('by', 'Author');
+        meta.set('Author', 'Author');
         meta.set('Publication date', 'PublicationDate')
         meta.set('Topics', 'Subject')
         meta.set('Publisher', 'Publisher')
@@ -99,10 +100,16 @@ export default class Archive1 extends Base {
         const metadata = fromClass('metadata-definition');
 
         for (var i = 0; i < metadata.length; i++) {
-            const metaname = metadata[i].children[0].innerText;
+            let j = 0, metaname;
 
-            if (meta.has(metaname)) {
-                info[meta.get(metaname)] = metadata[i].children[1].innerText;
+            while (j < metadata[i].children.length) {
+                if (j % 2 == 0) {
+                    metaname = metadata[i].children[j].innerText;
+                }
+                else if (meta.has(metaname)) {
+                    info[meta.get(metaname)] = metadata[i].children[j].innerText;
+                }
+                j++;
             }
         }
         info.Application = this.manifest.name;

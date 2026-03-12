@@ -1,0 +1,1 @@
+../../../core/js/utils/image_decoder.js

@@ -1,0 +1,1 @@
+../../core/js/stub2.js

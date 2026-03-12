@@ -71,39 +71,9 @@ export default class Base {
         this.writer = null;         // file stream writer
         this.doc = null;            // pdf/zip document object
 
-        window.addEventListener( 'message', this.onmessage );
+        window.addEventListener( 'message', this.onWindowMessage );
+        chrome.runtime.onMessage.addListener( this.onBrowserMessage );
 
-        chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-            if (sender.id != chrome.runtime.id) return;
-            if (!window.internetarchivedownloaderinit) return;
-
-            console.log(`message from browser: ${message.cmd}`);
-
-            if (message.cmd == 'settings') {
-                this.updateSettings(message.settings);
-            }
-            else if (sw) {
-                if (this.status != 1 && this.swaitcreate == false) return;
-
-                switch(message.cmd) {
-                case 'create':
-                    this.created();
-                    break;
-                case 'pause':
-                    this.pause();
-                    break;
-                case 'resume':
-                    this.resume();
-                    break;
-                case 'cancel':
-                    this.abort();
-                    break;
-                default:
-                    break;
-                }
-            }
-            sendResponse({});
-        });
         if (sw) {
             streamSaver.mitm = this.mitm;
         }
@@ -119,7 +89,7 @@ export default class Base {
         console.log(`isBrave: ${navigator.brave && typeof navigator.brave.isBrave == 'function' ? true : false}`);
     }
 
-    onmessage(evt) {
+    onWindowMessage(evt) {
         let that = window.internetarchivedownloader ;
         const edata = evt.data;
         if ( edata.tabid != that.tabid ) return;
@@ -135,6 +105,39 @@ export default class Base {
         default:
             break;
         }
+    }
+
+    onBrowserMessage(message, sender, sendResponse) {
+        if (sender.id != chrome.runtime.id) return;
+        if (!window.internetarchivedownloaderinit) return;
+
+        console.log(`message from browser: ${message.cmd}`);
+        let that = this.internetarchivedownloader;
+
+        if (message.cmd == 'settings') {
+            that.updateSettings(message.settings);
+        }
+        else if (sw) {
+            if (that.status != 1 && that.swaitcreate == false) return;
+
+            switch(message.cmd) {
+                case 'create':
+                    that.created();
+                    break;
+                case 'pause':
+                    that.pause();
+                    break;
+                case 'resume':
+                    that.resume();
+                    break;
+                case 'cancel':
+                    that.abort();
+                    break;
+                default:
+                    break;
+            }
+        }
+        sendResponse({});
     }
 
     loadScript(href) {
@@ -604,9 +607,11 @@ export default class Base {
                 });
 
                 if (!response2.ok) {
-                    throw new Error(response2.status);
+                    console.error(response2.status + " text " + pageindex);
                 }
-                text = await response2.text();
+                else {
+                    text = await response2.text();
+                }
             }
             this.createPage(view, text, pageindex, width, height);
             this.nextLeaf();
