@@ -112,7 +112,7 @@ export default class Base {
         if (!window.internetarchivedownloaderinit) return;
 
         console.log(`message from browser: ${message.cmd}`);
-        let that = this.internetarchivedownloader;
+        let that = window.internetarchivedownloader;
 
         if (message.cmd == 'settings') {
             that.updateSettings(message.settings);

@@ -34,7 +34,7 @@
         "https://archive.org/*"
         , "*://*.us.archive.org/*"
         , "https://babel.hathitrust.org/*"
-        , "https://github.com/*"
+        , "https://elementdavv.github.io/*"
     ]
     , "web_accessible_resources": [{
         "resources": [
@@ -45,7 +45,6 @@
         , "matches": [
             "https://archive.org/*"
             , "https://babel.hathitrust.org/*"
-            , "https://github.com/*"
         ]
     }]
 }
