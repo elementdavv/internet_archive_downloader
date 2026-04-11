@@ -8,6 +8,11 @@ In [HathiTrust Digital Library](https://hathitrust.org). books with full view pe
 
 The extension works by fetching every leaf of a book, constructing a PDF stream on the fly targeting to disk storage. So it can handle books of thousands of leafs easily with little memory.
 
+[![Github latest releases](https://img.shields.io/github/downloads/elementdavv/internet_archive_downloader/latest/total.svg?logo=github&label=Latest%20Downloads&color=darkgreen)](https://GitHub.com/elementdavv/chaka/releases/latest)
+[![Github all releases](https://img.shields.io/github/downloads/elementdavv/internet_archive_downloader/total.svg?logo=github&label=Total%20Downloads&color=darkgreen)](https://GitHub.com/elementdavv/chaka/releases/)
+[![Mozilla weekly](https://img.shields.io/amo/dw/internet_archive_downloader?logo=mozilla&label=Weekly%20Downloads&color=darkgreen)](https://addons.mozilla.org/en-US/firefox/addon/internet_archive_downloader/)
+[![Mozilla users](https://img.shields.io/amo/users/internet_archive_downloader?logo=mozilla&label=Total%20Userss&color=darkgreen)](https://addons.mozilla.org/en-US/firefox/addon/internet_archive_downloader/)
+
 ## Features
 * Download a book as a PDF file with text embedded, multiple languages supported
 * Download a book as a collection of image files (JPEG/PNG) one for each leaf, and the text of the book
