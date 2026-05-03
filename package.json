@@ -1,0 +1,8 @@
+{
+  "name": "internet-archive-downloader-local",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "iad": "./cli/archive-cli.mjs"
+  }
+}

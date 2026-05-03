@@ -40,6 +40,34 @@ Install as the following directions supports automatic updates when new versions
 - [Edge Addons](https://microsoftedge.microsoft.com/addons/detail/internet-archive-download/cnpoedgimjaecinmgfnfhfmcpcngeeje)
 - [Mozilla Addons (Firefox)](https://addons.mozilla.org/en-US/firefox/addon/internet_archive_downloader/)
 
+## Local runner
+A local command-line runner is included for `archive.org/details/...` URLs. This is useful when the browser extension cannot be installed.
+
+On Windows:
+
+```powershell
+.\iad.cmd https://archive.org/details/victorygirls00unit
+```
+
+Useful options:
+
+```powershell
+.\iad.cmd https://archive.org/details/victorygirls00unit --start 1 --end 10 --scale 2
+.\iad.cmd https://archive.org/details/victorygirls00unit --zip --output .\book.zip
+.\iad.cmd https://archive.org/details/some_borrowed_book --cookie-file .\cookies.txt
+.\iad.cmd https://archive.org/details/some_borrowed_book --cookies-from-brave
+.\iad.cmd https://archive.org/details/some_borrowed_book --cookies-from-edge
+.\iad.cmd https://archive.org/details/some_borrowed_book --cookies-from-brave --output .\book.pdf
+```
+
+Notes:
+* The local runner currently supports `archive.org` detail pages only.
+* For borrowed books, pass your authenticated browser cookies with `--cookie` or `--cookie-file`.
+* `--cookies-from-brave` and `--cookies-from-edge` launch the selected browser with its existing profile and use that live browser session for protected page requests.
+* Close the selected browser first, then run the command. If the opened browser window is not actively borrowing the book yet, borrow it there and leave it open while the terminal continues.
+* The downloader closes the browser session it launched when the download finishes.
+* Output defaults to PDF. Use `--zip` to save page images instead.
+
 ## Configuration
 - For Firefox, permissions of access to related websites must be granted in the "Permissions" tab within the extension detail page.
 
