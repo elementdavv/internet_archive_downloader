@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
+import os from 'node:os';
+import crypto from 'node:crypto';
 import process from 'node:process';
 import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -27,9 +29,17 @@ async function main() {
   let writer = null;
   try {
     const detailUrl = normalizeDetailUrl(options.url);
-    browserSession = getRequestedBrowserSession(options)
-      ? await loadBrowserArchiveSession(getRequestedBrowserSession(options), detailUrl, options.braveProfile ?? options.browserProfile ?? 'Default')
-      : null;
+    options.referer = detailUrl;
+    const browserName = getRequestedBrowserSession(options);
+    if (browserName) {
+      const profile = options.browserProfile ?? options.braveProfile ?? 'Default';
+      if (process.platform === 'darwin') {
+        console.log(`Reading ${browserName} cookies for archive.org from Keychain (click "Always Allow" if prompted)...`);
+        options.cookie = await readBrowserCookiesMac(browserName, profile, 'archive.org');
+      } else {
+        browserSession = await loadBrowserArchiveSession(browserName, detailUrl, profile);
+      }
+    }
     const headers = await buildHeaders(options, browserSession);
 
     console.log(`Loading ${detailUrl}`);
@@ -163,6 +173,9 @@ function parseArgs(argv) {
       case '--cookies-from-edge':
         options.cookiesFromEdge = true;
         break;
+      case '--cookies-from-chrome':
+        options.cookiesFromChrome = true;
+        break;
       case '--brave-profile':
         options.braveProfile = argv[++i];
         break;
@@ -207,6 +220,7 @@ Options:
   --cookie-file <path>  Read Cookie header value from a file
   --cookies-from-brave  Read archive.org cookies from your Brave profile
   --cookies-from-edge   Read archive.org cookies from your Edge profile
+  --cookies-from-chrome Read archive.org cookies from your Chrome profile
   --brave-profile <p>   Brave profile name, default: Default
   --browser-profile <p> Browser profile name, default: Default
   --help, -h            Show this help
@@ -227,14 +241,14 @@ async function buildHeaders(options, browserSession = null) {
   if (!cookie && options.cookieFile) {
     cookie = (await fsp.readFile(path.resolve(options.cookieFile), 'utf8')).trim();
   }
-  if (!cookie && options.cookiesFromBrave) {
-    cookie = browserSession?.cookieHeader ?? null;
-  }
-  if (!cookie && options.cookiesFromEdge) {
+  if (!cookie && (options.cookiesFromBrave || options.cookiesFromEdge || options.cookiesFromChrome)) {
     cookie = browserSession?.cookieHeader ?? null;
   }
   if (cookie) {
     headers.cookie = cookie;
+  }
+  if (options.referer) {
+    headers.referer = options.referer;
   }
 
   return headers;
@@ -253,16 +267,98 @@ function assertFullBookReaderAccess(br, pages) {
 }
 
 function getRequestedBrowserSession(options) {
-  if (options.cookiesFromBrave && options.cookiesFromEdge) {
+  const picks = [
+    options.cookiesFromBrave && 'brave',
+    options.cookiesFromEdge && 'edge',
+    options.cookiesFromChrome && 'chrome',
+  ].filter(Boolean);
+  if (picks.length > 1) {
     throw new Error('Choose only one browser cookie source.');
   }
-  if (options.cookiesFromBrave) {
-    return 'brave';
+  return picks[0] ?? null;
+}
+
+const macSafeStorageConfigs = {
+  chrome: { service: 'Chrome Safe Storage', dataDir: 'Google/Chrome' },
+  brave: { service: 'Brave Safe Storage', dataDir: 'BraveSoftware/Brave-Browser' },
+  edge: { service: 'Microsoft Edge Safe Storage', dataDir: 'Microsoft Edge' },
+};
+
+async function readBrowserCookiesMac(browserName, profileName, domain) {
+  const config = macSafeStorageConfigs[browserName];
+  if (!config) {
+    throw new Error(`Unsupported browser for cookie decryption: ${browserName}`);
   }
-  if (options.cookiesFromEdge) {
-    return 'edge';
+
+  const keychain = spawnSync('security', ['find-generic-password', '-w', '-s', config.service], { encoding: 'utf8' });
+  if (keychain.status !== 0) {
+    const detail = keychain.stderr.trim() || 'No matching keychain item found.';
+    throw new Error(`Could not read "${config.service}" from macOS Keychain. ${detail}`);
   }
-  return null;
+  const password = keychain.stdout.trim();
+  const key = crypto.pbkdf2Sync(password, 'saltysalt', 1003, 16, 'sha1');
+  const iv = Buffer.alloc(16, 0x20);
+
+  const cookiesDir = path.join(process.env.HOME ?? '', 'Library', 'Application Support', config.dataDir, profileName);
+  const cookiesPath = path.join(cookiesDir, 'Cookies');
+  if (!fs.existsSync(cookiesPath)) {
+    throw new Error(`Cookies file not found at ${cookiesPath}. Is profile "${profileName}" correct?`);
+  }
+
+  const tmpDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'iad-cookies-'));
+  try {
+    const tmpCookies = path.join(tmpDir, 'Cookies');
+    await fsp.copyFile(cookiesPath, tmpCookies);
+    for (const suffix of ['-wal', '-shm']) {
+      const sidecar = cookiesPath + suffix;
+      if (fs.existsSync(sidecar)) {
+        await fsp.copyFile(sidecar, path.join(tmpDir, 'Cookies' + suffix));
+      }
+    }
+
+    const sql = `SELECT host_key, name, value, hex(encrypted_value) AS encrypted_value FROM cookies WHERE host_key LIKE '%${domain}' OR host_key LIKE '%.${domain}'`;
+    const result = spawnSync('/usr/bin/sqlite3', ['-json', tmpCookies, sql], { encoding: 'utf8' });
+    if (result.status !== 0) {
+      throw new Error(`sqlite3 query failed: ${result.stderr.trim()}`);
+    }
+    const rows = result.stdout.trim() ? JSON.parse(result.stdout) : [];
+
+    const cookies = new Map();
+    for (const row of rows) {
+      let value = row.value;
+      if (!value && row.encrypted_value) {
+        const blob = Buffer.from(row.encrypted_value, 'hex');
+        const prefix = blob.subarray(0, 3).toString('utf8');
+        if (prefix !== 'v10' && prefix !== 'v11') {
+          continue;
+        }
+        try {
+          const decipher = crypto.createDecipheriv('aes-128-cbc', key, iv);
+          let plain = Buffer.concat([decipher.update(blob.subarray(3)), decipher.final()]);
+          if (plain.length >= 32) {
+            const expected = crypto.createHash('sha256').update(row.host_key).digest();
+            if (plain.subarray(0, 32).equals(expected)) {
+              plain = plain.subarray(32);
+            }
+          }
+          value = plain.toString('utf8');
+        } catch (_) {
+          continue;
+        }
+      }
+      if (value !== undefined && value !== null && value !== '') {
+        cookies.set(row.name, value);
+      }
+    }
+
+    if (cookies.size === 0) {
+      throw new Error(`No ${domain} cookies found in ${browserName} profile "${profileName}". Open https://${domain} in ${browserName} and log in first.`);
+    }
+
+    return Array.from(cookies.entries()).map(([n, v]) => `${n}=${v}`).join('; ');
+  } finally {
+    await fsp.rm(tmpDir, { recursive: true, force: true });
+  }
 }
 
 async function loadBrowserArchiveSession(browserName, detailUrl, profileName) {
@@ -334,54 +430,87 @@ async function loadBrowserArchiveSession(browserName, detailUrl, profileName) {
 }
 
 function isProcessRunning(imageName) {
-  const result = spawnSync('tasklist', ['/FI', `IMAGENAME eq ${imageName}`], {
-    encoding: 'utf8',
-    windowsHide: true,
-  });
-  return result.status === 0 && result.stdout.toLowerCase().includes(imageName.toLowerCase());
+  if (process.platform === 'win32') {
+    const result = spawnSync('tasklist', ['/FI', `IMAGENAME eq ${imageName}`], {
+      encoding: 'utf8',
+      windowsHide: true,
+    });
+    return result.status === 0 && result.stdout.toLowerCase().includes(imageName.toLowerCase());
+  }
+  const result = spawnSync('pgrep', ['-x', imageName], { encoding: 'utf8' });
+  return result.status === 0 && result.stdout.trim().length > 0;
 }
 
 function findBrowserInstall(browserName) {
-  const localAppData = process.env.LOCALAPPDATA;
-  const programFiles = process.env['PROGRAMFILES'];
-  const programFilesX86 = process.env['PROGRAMFILES(X86)'];
-  const configs = {
-    brave: {
-      displayName: 'Brave',
-      processName: 'brave.exe',
-      exeName: 'brave.exe',
-      debugPort: 9223,
-      installParts: ['BraveSoftware', 'Brave-Browser', 'Application'],
-      userDataParts: ['BraveSoftware', 'Brave-Browser', 'User Data'],
-    },
-    edge: {
-      displayName: 'Edge',
-      processName: 'msedge.exe',
-      exeName: 'msedge.exe',
-      debugPort: 9224,
-      installParts: ['Microsoft', 'Edge', 'Application'],
-      userDataParts: ['Microsoft', 'Edge', 'User Data'],
-    },
-  };
+  const configs = process.platform === 'darwin' ? macBrowserConfigs() : windowsBrowserConfigs();
   const config = configs[browserName];
   if (!config) {
     throw new Error(`Unsupported browser: ${browserName}`);
   }
-  const candidates = [programFiles, programFilesX86, localAppData]
-    .filter(Boolean)
-    .map(root => path.join(root, ...config.installParts, config.exeName));
 
-  const exePath = candidates.find(candidate => fs.existsSync(candidate));
+  const exePath = config.exeCandidates.find(candidate => fs.existsSync(candidate));
   if (!exePath) {
     throw new Error(`Could not find ${config.displayName} installation.`);
   }
-
-  const userDataDir = path.join(localAppData ?? '', ...config.userDataParts);
-  if (!fs.existsSync(userDataDir)) {
-    throw new Error(`Could not find ${config.displayName} user data directory.`);
+  if (!fs.existsSync(config.userDataDir)) {
+    throw new Error(`Could not find ${config.displayName} user data directory at ${config.userDataDir}.`);
   }
 
-  return { ...config, exePath, userDataDir };
+  return { ...config, exePath };
+}
+
+function windowsBrowserConfigs() {
+  const localAppData = process.env.LOCALAPPDATA;
+  const programFiles = process.env['PROGRAMFILES'];
+  const programFilesX86 = process.env['PROGRAMFILES(X86)'];
+  const roots = [programFiles, programFilesX86, localAppData].filter(Boolean);
+
+  const make = (displayName, processName, exeName, installParts, userDataParts, debugPort) => ({
+    displayName,
+    processName,
+    debugPort,
+    exeCandidates: roots.map(root => path.join(root, ...installParts, exeName)),
+    userDataDir: path.join(localAppData ?? '', ...userDataParts),
+  });
+
+  return {
+    brave: make('Brave', 'brave.exe', 'brave.exe',
+      ['BraveSoftware', 'Brave-Browser', 'Application'],
+      ['BraveSoftware', 'Brave-Browser', 'User Data'], 9223),
+    edge: make('Edge', 'msedge.exe', 'msedge.exe',
+      ['Microsoft', 'Edge', 'Application'],
+      ['Microsoft', 'Edge', 'User Data'], 9224),
+    chrome: make('Chrome', 'chrome.exe', 'chrome.exe',
+      ['Google', 'Chrome', 'Application'],
+      ['Google', 'Chrome', 'User Data'], 9222),
+  };
+}
+
+function macBrowserConfigs() {
+  const appSupport = path.join(process.env.HOME ?? '', 'Library', 'Application Support');
+  return {
+    brave: {
+      displayName: 'Brave',
+      processName: 'Brave Browser',
+      debugPort: 9223,
+      exeCandidates: ['/Applications/Brave Browser.app/Contents/MacOS/Brave Browser'],
+      userDataDir: path.join(appSupport, 'BraveSoftware', 'Brave-Browser'),
+    },
+    edge: {
+      displayName: 'Edge',
+      processName: 'Microsoft Edge',
+      debugPort: 9224,
+      exeCandidates: ['/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge'],
+      userDataDir: path.join(appSupport, 'Microsoft Edge'),
+    },
+    chrome: {
+      displayName: 'Chrome',
+      processName: 'Google Chrome',
+      debugPort: 9222,
+      exeCandidates: ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'],
+      userDataDir: path.join(appSupport, 'Google', 'Chrome'),
+    },
+  };
 }
 
 async function waitForJson(url, timeoutMs) {
@@ -644,25 +773,38 @@ async function fetchArchivePage(page, scale, headers, browserSession = null) {
   url += url.includes('?') ? '&' : '?';
   url += `scale=${scale}&rotate=0`;
 
-  if (browserSession?.fetchResource) {
-    const browserResponse = await browserSession.fetchResource(url);
-    if (!browserResponse.ok) {
-      throw new Error(`Page fetch failed: ${browserResponse.status} ${browserResponse.statusText} for ${url}`);
-    }
-    return await ImageDecoder.decodeArchiveImage({
-      arrayBuffer: async () => browserResponse.buffer,
-      headers: {
-        get: name => browserResponse.headers.get(name.toLowerCase()) ?? browserResponse.headers.get(name) ?? null,
-      },
-      url: browserResponse.url,
-    });
-  }
+  const maxAttempts = 5;
+  let lastError;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      if (browserSession?.fetchResource) {
+        const browserResponse = await browserSession.fetchResource(url);
+        if (!browserResponse.ok) {
+          throw new Error(`Page fetch failed: ${browserResponse.status} ${browserResponse.statusText} for ${url}`);
+        }
+        return await ImageDecoder.decodeArchiveImage({
+          arrayBuffer: async () => browserResponse.buffer,
+          headers: {
+            get: name => browserResponse.headers.get(name.toLowerCase()) ?? browserResponse.headers.get(name) ?? null,
+          },
+          url: browserResponse.url,
+        });
+      }
 
-  const response = await fetch(url, { headers });
-  if (!response.ok) {
-    throw new Error(`Page fetch failed: ${response.status} ${response.statusText} for ${url}`);
+      const response = await fetch(url, { headers });
+      if (!response.ok) {
+        throw new Error(`Page fetch failed: ${response.status} ${response.statusText} for ${url}`);
+      }
+      return await ImageDecoder.decodeArchiveImage(response);
+    } catch (error) {
+      lastError = error;
+      if (attempt === maxAttempts) break;
+      const delay = Math.min(1000 * 2 ** (attempt - 1), 8000);
+      console.log(`  retry ${attempt}/${maxAttempts - 1} for ${url} after ${delay}ms (${error.message})`);
+      await sleep(delay);
+    }
   }
-  return await ImageDecoder.decodeArchiveImage(response);
+  throw lastError;
 }
 
 async function runPool(items, concurrency, worker) {
