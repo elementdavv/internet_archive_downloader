@@ -22,6 +22,7 @@ const LANGUAGE_CODES = {
     'Chinese': 'zh',
     'Japanese': 'ja',
     'Korean': 'ko',
+    'Tibetan': 'bo',
     'Hindi': 'hi',
     'Latin': 'la',
     'Greek': 'el',
@@ -87,6 +88,7 @@ const FONTURLS = {
     ',zh,': 'https://elementdavv.github.io/fonts/NotoSerifSC-Regular.ttf',
     ',ja,': 'https://elementdavv.github.io/fonts/NotoSerifJP-Regular.ttf',
     ',ko,': 'https://elementdavv.github.io/fonts/NotoSerifKR-Regular.ttf',
+    ',bo,': 'https://elementdavv.github.io/fonts/NotoSerifTibetan-Regular.ttf',
     ',hi,': 'https://elementdavv.github.io/fonts/NotoSerifDevanagari-Regular.ttf',
     ',ar,fa,':
             'https://elementdavv.github.io/fonts/VazirmatnArabic-Regular.ttf',

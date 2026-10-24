@@ -1,4 +1,10 @@
 # Changelog
+## v1.2.4
+- add Tibetan language support
+
+## v1.2.2
+- fix a bug in Firefox version
+
 ## v1.2.0
 - add support of multiple languages including CJK, Russian, Hindi, Arabic, Hebrew etc to text embedded into PDF.
 
